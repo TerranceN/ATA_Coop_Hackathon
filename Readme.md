@@ -12,6 +12,13 @@ SSHing into the server
 ----------------------
 Wesley should have given you access. Just do `ssh 199.167.22.180` then enter your panel password.
 
+Setting up a local server
+---------------------
+clone the repo.
+install node.js on your machine.
+in the terminal, in the repo directory, run "npm install socket.io" and "npm install browserify"
+run the server with 'node server.js' and test at localhost:8888
+
 Running the server
 ------------------
 
