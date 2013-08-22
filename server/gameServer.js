@@ -1,4 +1,5 @@
 var Player = require("../common/player");
+var world = require("../common/world");
 var ioModule = require("socket.io");
 var io;
 
@@ -6,6 +7,7 @@ var players = [];
 var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
+
 
 var getNextPlayerId = function () {
     lastPlayerId += 1;
