@@ -17,7 +17,7 @@ Setting up a local server
 clone the repo.
 install node.js on your machine.
 in the terminal, in the repo directory, run "npm install socket.io" and "npm install browserify"
-run the server with 'node server.js' and test at localhost:8888
+run the server with 'node server.js', and update any client changes with "make" and test at localhost:8888
 
 Running the server
 ------------------
