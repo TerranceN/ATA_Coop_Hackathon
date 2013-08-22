@@ -43,6 +43,11 @@ var player = {
     size: 15
 };
 
+var world = {
+    width: 1000,
+    height: 1000
+};
+
 var gameTime = 0;
 
 // Speed in pixels per second
@@ -93,26 +98,60 @@ function checkPlayerBounds() {
     if(player.pos[0] < player.size) {
         player.pos[0] = player.size;
     }
-    else if(player.pos[0] > canvas.width - player.size) {
-        player.pos[0] = canvas.width - player.size;
+    else if(player.pos[0] > world.width - player.size) {
+        player.pos[0] = world.width - player.size;
     }
 
     if(player.pos[1] < player.size) {
         player.pos[1] = player.size;
     }
-    else if(player.pos[1] > canvas.height - player.size) {
-        player.pos[1] = canvas.height - player.size;
+    else if(player.pos[1] > world.height - player.size) {
+        player.pos[1] = world.height - player.size;
     }
 }
 
 // Draw everything
 function render() {
-    ctx.fillStyle = '#ffffff';
+    var screen_offset = {
+        x: canvas.width/2 - player.pos[0],
+        y: canvas.height/2 - player.pos[1]
+    };
+
+    // Fill the screen gray (the out of bounds area)
+    ctx.fillStyle = '#cccccc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Fill the area of the world that is in bounds as white
+    ctx.beginPath();
+    ctx.rect(screen_offset.x, screen_offset.y, world.width, world.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Draw a grid        
+    var gridunit = 20;
+    ctx.beginPath();
+    for (var x = screen_offset.x % gridunit; x <= canvas.width; x += gridunit) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+    }
+    for (var y = screen_offset.y % gridunit; y <= canvas.height; y += gridunit) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+    }
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#999999';
+    ctx.stroke();
+
+    // outline the edge of the world
+    ctx.beginPath();
+    ctx.rect(screen_offset.x, screen_offset.y, world.width, world.height);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#000000';
+    ctx.stroke();
 
     // Render the player 
     ctx.beginPath();
-    ctx.arc(player.pos[0], player.pos[1], player.size, 0, 2 * Math.PI, false);
+    ctx.arc(canvas.width/2, canvas.height/2, player.size, 0, 2 * Math.PI, false);
     ctx.fillStyle = "rgba(192, 255, 192, 1.0)";//'#ccffcc';
     ctx.fill();
     ctx.lineWidth = 1;
