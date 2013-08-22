@@ -8,6 +8,7 @@
  "dependencies":
     {
         "socket.io": ">= 0.9.16",
+        "browserify": ">=2.28.0",
         "fs": ">= 0.0.0"
     }
 }
