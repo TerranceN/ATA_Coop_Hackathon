@@ -2,6 +2,7 @@ var http = require("http"),
     url = require("url"),
     path = require("path"),
     fs = require("fs"),
+    Player = require("./common/player");
     port = process.argv[2] || 8888;
 
 var app = http.createServer(function(request, response) {
@@ -47,13 +48,14 @@ app.listen(parseInt(port, 10));
 
 io = require("socket.io").listen(app);
 
-var pressedKeys = {};
-
 io.sockets.on('connection', function (socket) {
     socket.emit('news', { hello: 'world' });
+    socket.on('my other event', function (data) {
+        console.log(data);
+    });
     socket.on('setKey', function (data) {
-        pressedKeys[data['key']] = data['status'];
+        console.log(data);
     });
 });
 
-console.log("Static file server running at\n  => http://localhost:" + port + "/\nCTRL + C to shutdown");
+console.log("Static file server running on port: " + port + "/\nCTRL + C to shutdown");
