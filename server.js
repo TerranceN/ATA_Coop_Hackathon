@@ -47,10 +47,12 @@ app.listen(parseInt(port, 10));
 
 io = require("socket.io").listen(app);
 
+var pressedKeys = {};
+
 io.sockets.on('connection', function (socket) {
     socket.emit('news', { hello: 'world' });
-    socket.on('my other event', function (data) {
-        console.log(data);
+    socket.on('setKey', function (data) {
+        pressedKeys[data['key']] = data['status'];
     });
 });
 

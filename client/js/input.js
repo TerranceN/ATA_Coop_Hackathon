@@ -1,4 +1,7 @@
-var socket = io.connect('http://199.167.22.180:8888/');
+//var server_url = 'http://localhost:8888/';
+var server_url = 'http://199.167.22.180:8888/';
+
+var socket = io.connect(server_url);
 
 (function() {
     var pressedKeys = {};
