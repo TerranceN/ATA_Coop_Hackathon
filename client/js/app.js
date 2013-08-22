@@ -1,5 +1,6 @@
 var Player = require('../../common/player');
 var Vector2 = require('../../common/vector2');
+var world = require("../../common/world");
 
 var userPlayer;
 var players = [];
@@ -91,15 +92,6 @@ var init = function init() {
 }
 
 // Game state
-var player = {
-    pos: [100, 100],
-    size: 15
-};
-
-var world = {
-    width: 1000,
-    height: 1000
-};
 
 var gameTime = 0;
 
@@ -126,24 +118,12 @@ function checkCollisions() {
 }
 
 function checkPlayerBounds() {
-    // Check bounds
-    if(player.pos[0] < player.size) {
-        player.pos[0] = player.size;
-    }
-    else if(player.pos[0] > world.width - player.size) {
-        player.pos[0] = world.width - player.size;
-    }
-
-    if(player.pos[1] < player.size) {
-        player.pos[1] = player.size;
-    }
-    else if(player.pos[1] > world.height - player.size) {
-        player.pos[1] = world.height - player.size;
-    }
 }
 
 // Draw everything
 function render() {
+    ctx.setTransform(1,0,0,1,0,0);
+
     var canvasSize = new Vector2(canvas.width, canvas.height);
     var screenOffset = canvasSize.scale(1/2).add(userPlayer.position.scale(-1));
 
@@ -154,27 +134,31 @@ function render() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Fill the area of the world that is in bounds as white
+    ctx.translate(screenOffset.x, screenOffset.y);
     ctx.beginPath();
-    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.rect(0, 0, world.width, world.height);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
-    // Draw a grid        
+    // Draw a grid
+    ctx.setTransform(1,0,0,1,0,0);
     var gridunit = 20;
     ctx.beginPath();
-    for (var x = 0 % gridunit; x <= canvas.width; x += gridunit) {
+    for (var x = screenOffset.x % gridunit; x <= canvas.width; x += gridunit) {
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
     }
-    for (var y = 0 % gridunit; y <= canvas.height; y += gridunit) {
+    for (var y = screenOffset.y % gridunit; y <= canvas.height; y += gridunit) {
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
     }
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#999999';
     ctx.stroke();
+    
 
-    // outline the edge of the world
+    // outline the edge of the world]
+    ctx.translate(screenOffset.x, screenOffset.y);
     ctx.beginPath();
     ctx.rect(0, 0, world.width, world.height);
     ctx.lineWidth = 3;

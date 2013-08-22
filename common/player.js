@@ -1,4 +1,5 @@
-var Vector2 = require('./vector2')
+var Vector2 = require('./vector2');
+var world = require('./world');
 
 var playerSpeed = 30;
 var playerDamping = 6;
@@ -6,7 +7,7 @@ var playerDamping = 6;
 var Player = function (id, socket, isServer) {
     this.id = id;
     this.socket = socket;
-    this.position = new Vector2();
+    this.position = new Vector2(Math.random() * 200, Math.random() * 200);
     this.velocity = new Vector2();
     this.targetOffset = new Vector2();
     this.targetOffsetCount = 0;
@@ -103,9 +104,27 @@ Player.prototype.update = function (delta) {
         this.velocity = this.velocity.add(controlsDirection.getNormalized().scale(playerSpeed));
     }
     this.position = this.position.add(this.velocity.scale(delta));
-
+    this.checkCollisions();
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
 }
+
+Player.prototype.checkCollisions = function () {
+
+    // Check collision with edge of map
+    if(this.position.x < this.size) {
+        this.position.x = this.size;
+    }
+    if(this.position.x > world.width - this.size) {
+        this.position.x = world.width - this.size;
+    }
+
+    if(this.position.y < this.size) {
+        this.position.y = this.size;
+    }
+    if(this.position.y > world.height - this.size) {
+        this.position.y = world.height - this.size;
+    }
+} 
 
 Player.prototype.draw = function (canvas, ctx) {
     if (this.targetOffsetCount < 6) {
