@@ -1,3 +1,4 @@
+var socket = io.connect('http://199.167.22.180:8888/');
 
 (function() {
     var pressedKeys = {};
@@ -22,6 +23,7 @@
             key = String.fromCharCode(code);
         }
 
+        socket.emit('setKey', {key: key, status: status});
         pressedKeys[key] = status;
     }
 
