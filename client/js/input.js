@@ -24,7 +24,6 @@
         }
 
         if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
-            console.log({key: key, status: status});
             socket.emit('setKey', {key: key, status: status});
             pressedKeys[key] = status;
         }
