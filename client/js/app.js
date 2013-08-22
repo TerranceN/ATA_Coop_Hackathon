@@ -45,9 +45,6 @@ var init = function init() {
             userPlayer = new Player(data['id'], socket);
             players.push(userPlayer);
 
-            input.setSocket(socket);
-            input.setUserPlayer(userPlayer);
-
             socket.on('playerUpdate', function(data) {
                 var playerUpdates = data['players'];
 
@@ -113,33 +110,10 @@ var playerSpeed = 200;
 function update(dt) {
     gameTime += dt;
 
-    handleInput(dt);
     updateEntities(dt);
 
     checkCollisions();
 };
-
-function handleInput(dt) {
-    /*if(input.isDown('DOWN') || input.isDown('s')) {
-        player.pos[1] += playerSpeed * dt;
-    }
-
-    if(input.isDown('UP') || input.isDown('w')) {
-        player.pos[1] -= playerSpeed * dt;
-    }
-
-    if(input.isDown('LEFT') || input.isDown('a')) {
-        player.pos[0] -= playerSpeed * dt;
-    }
-
-    if(input.isDown('RIGHT') || input.isDown('d')) {
-        player.pos[0] += playerSpeed * dt;
-    }
-
-    if(input.isDown('SPACE')) {
-        //
-    }*/
-}
 
 function updateEntities(dt) {
     for (var i = 0; i < players.length; i++) {

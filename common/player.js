@@ -37,6 +37,30 @@ var sign = function (num) {
     }
 }
 
+Player.prototype.setKey = function (event, status) {
+    var code = event.keyCode;
+    var key = String.fromCharCode(code);
+
+    switch (key) {
+        case 'W': {
+            this.upPressed = status;
+        } break;
+        case 'A': {
+            this.leftPressed = status;
+        } break;
+        case 'S': {
+            this.downPressed = status;
+        } break;
+        case 'D': {
+            this.rightPressed = status;
+        } break;
+    }
+
+    if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
+        this.socket.emit('setKey', {key: key, status: status});
+    }
+}
+
 Player.prototype.createListeners = function (socket, isServer) {
     var player = this;
     if (isServer) {
@@ -52,6 +76,20 @@ Player.prototype.createListeners = function (socket, isServer) {
             }
         });
     } else {
+        document.addEventListener('keydown', function(e) {
+            player.setKey(e, true);
+        });
+
+        document.addEventListener('keyup', function(e) {
+            player.setKey(e, false);
+        });
+
+        window.addEventListener('blur', function() {
+            player.upPressed = false;
+            player.downPressed = false;
+            player.leftPressed = false;
+            player.rightPressed = false;
+        });
     }
 };
 
