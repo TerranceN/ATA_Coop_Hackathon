@@ -8,7 +8,6 @@ var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
 
-
 var getNextPlayerId = function () {
     lastPlayerId += 1;
     return lastPlayerId;
@@ -71,6 +70,7 @@ var gameLoop = function (lastTime) {
 
 module.exports.init = function (app) {
     io = ioModule.listen(app);
+    io.set('log level', 1); // reduce logging
     initConnectionHandler();
     gameLoop(Date.now());
 }

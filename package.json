@@ -1,0 +1,14 @@
+{
+ "name": "Hatsassin",
+ "version": "0.0.1",
+ "repository": {
+     "type": "git",
+     "url": "https://github.com/TerranceN/ATA_Coop_Hackathon.git"
+ },
+ "dependencies":
+    {
+        "socket.io": ">= 0.9.16",
+        "browserify": ">=2.28.0",
+        "fs": ">= 0.0.0"
+    }
+}
