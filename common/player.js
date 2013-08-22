@@ -1,17 +1,22 @@
 var Vector2 = require('./vector2');
 var world = require('./world');
+var Sprite = require('./sprite');
+var Entity = require('./entity');
 
+var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
+var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
 var playerSpeed = 30;
 var playerDamping = 6;
 
 var Player = function (id, socket, isServer) {
     this.id = id;
     this.socket = socket;
-    this.position = new Vector2(Math.random() * 200, Math.random() * 200);
+    this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
     this.targetOffset = new Vector2();
     this.targetOffsetCount = 0;
     this.size = 15;
+    this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0, 1]);
 
     this.controlsDirection = new Vector2();
     this.upPressed = false;
@@ -37,6 +42,10 @@ var sign = function (num) {
         return 0;
     }
 }
+
+
+Player.prototype = new Entity();        // Set prototype to Person's
+Player.prototype.constructor = Player;
 
 Player.prototype.setKey = function (event, status) {
     var code = event.keyCode;
@@ -91,6 +100,58 @@ Player.prototype.createListeners = function (socket, isServer) {
             player.leftPressed = false;
             player.rightPressed = false;
         });
+
+        document.addEventListener('mousemove', function (evt) {
+
+            /*
+            var totalOffsetX = 0;
+            var totalOffsetY = 0;
+            var canvasX = 0;
+            var canvasY = 0;
+            var currentElement = canvas;
+
+            do{
+                totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
+                totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
+            }
+            while(currentElement = currentElement.offsetParent)
+
+            canvasX = evt.pageX - totalOffsetX;
+            canvasY = evt.pageY - totalOffsetY;
+
+            player.mouseX = canvasX;
+            player.mouseY = canvasY;
+            */
+
+            /*
+            var canvas = document.getElementById('canvas');
+            var obj = canvas;
+            var top = 0;
+            var left = 0;
+            while (obj && obj.tagName != evt.target) {
+                top += obj.offsetTop;
+                left += obj.offsetLeft;
+                obj = obj.offsetParent;
+            }*/
+
+            // return relative mouse position
+            /*
+            player.mouseX = evt.clientX - left + window.pageXOffset;
+            player.mouseY = evt.clientY - top + window.pageYOffset;
+            */
+
+            if (evt.target == canvas) {
+                if (evt.offsetX) {
+                    mouse = new Vector2(evt.offsetX, evt.offsetY);
+                }
+                else if (evt.layerX) {
+                    mouse = new Vector2(evt.layerX, evt.layerY);
+                }
+
+                var mouseDiff = mouse.add(new Vector2(-canvas.width/2, -canvas.height/2));
+                player.angle = Math.atan2(mouseDiff.y, mouseDiff.x);
+            }
+        }, false);
     }
 };
 
@@ -127,20 +188,21 @@ Player.prototype.checkCollisions = function () {
 } 
 
 Player.prototype.draw = function (canvas, ctx) {
-    if (this.targetOffsetCount < 6) {
+    /*if (this.targetOffsetCount < 6) {
         var drawPos = this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
         this.targetOffsetCount += 1;
     } else {
         var drawPos = this.position;
-    }
-
+    }*/
+    var drawPos = this.position;
+    
     // Render the player 
     ctx.beginPath();
     ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = "rgba(192, 255, 192, 1.0)";//'#ccffcc';
+    ctx.fillStyle = playerColors[this.id % playerColors.length];//"rgba(192, 255, 192, 1.0)";
     ctx.fill();
     ctx.lineWidth = 1;
-    ctx.strokeStyle = '#003300';
+    ctx.strokeStyle = '#000000';
     ctx.stroke();
 }
 

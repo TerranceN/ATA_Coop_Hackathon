@@ -1,6 +1,7 @@
 var Player = require('../../common/player');
 var Vector2 = require('../../common/vector2');
 var world = require("../../common/world");
+var Sprite = require("../../common/sprite");
 
 var userPlayer;
 var players = [];
@@ -21,8 +22,9 @@ var requestAnimFrame = (function(){
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-canvas.width = 512;
-canvas.height = 480;
+canvas.id = 'canvas';
+canvas.width = 800;
+canvas.height = 600;
 document.body.appendChild(canvas);
 
 // The main game loop
@@ -167,6 +169,15 @@ function render() {
 
     for (var i = 0; i < players.length; i++) {
         players[i].draw(canvas, ctx);
+        players[i].render(canvas, ctx);
     }
+
+    ctx.setTransform(1,0,0,1,0,0);
 };
-init();
+
+resources.load([
+    'client/img/sprites.png',
+    'client/img/terrain.png',
+    'client/img/player1.png'
+]);
+resources.onReady(init);
