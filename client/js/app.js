@@ -5,6 +5,10 @@ var world = require("../../common/world");
 var userPlayer;
 var players = [];
 
+//chat parameters
+var isTyping = false;
+var chatInputBox = document.getElementById("chatinput");
+
 // A cross-browser requestAnimationFrame
 // See https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
 var requestAnimFrame = (function(){
@@ -23,7 +27,8 @@ var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 canvas.width = 512;
 canvas.height = 480;
-document.body.appendChild(canvas);
+var target = document.getElementById("canvas-box");
+target.parentNode.replaceChild(canvas, target);
 
 // The main game loop
 var lastTime;

@@ -28,6 +28,10 @@ var initConnectionHandler = function () {
             players.splice(players.indexOf(player), 1);
             io.sockets.emit('userDisconnected', {'id': player.id});
         });
+
+        socket.on('chat', function(data){
+            io.sockets.emit('chat', data);
+        });
     });
 }
 

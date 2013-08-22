@@ -12,6 +12,7 @@ var Player = function (id, socket, isServer) {
     this.targetOffset = new Vector2();
     this.targetOffsetCount = 0;
     this.size = 15;
+    this.alive = 0;
 
     this.controlsDirection = new Vector2();
     this.upPressed = false;
@@ -27,6 +28,9 @@ var Player = function (id, socket, isServer) {
         this.createListeners(socket, isServer);
     }
 };
+
+Player.ALIVE = 1;
+Player.DEAD = 0;
 
 var sign = function (num) {
     if (num < 0) {

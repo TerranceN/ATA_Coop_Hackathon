@@ -5,20 +5,25 @@ html, body {
 }
 
 canvas {
-    display: block;
-    margin: auto;
+    float: left;
 
+    /*
+    margin: auto;
     position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
-    right: 0;
+    right: 0;*/
 }
 
 .wrapper {
-    width: 512px;
+    width: 712;
     margin: 0 auto;
     margin-top: 2em;
+}
+
+#main {
+    clear: both;
 }
 
 #instructions {
@@ -35,4 +40,22 @@ canvas {
 
 .key {
     color: #aaffdd;
+}
+
+#chatbox {
+    float: right;
+    width: 200px;
+    height: 480px;
+}
+
+#chatoutput {
+    background: white;
+    overflow: scroll;
+    width: 200px;
+    height: 450px;
+}
+
+#chatinput {
+    width: 200px;
+    height: 30px;
 }
