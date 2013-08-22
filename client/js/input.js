@@ -1,30 +1,33 @@
-var socket = io.connect(document.URL);
 
 (function() {
     var pressedKeys = {};
+    var socket;
+    var player;
 
     function setKey(event, status) {
         var code = event.keyCode;
-        var key;
+        var key = String.fromCharCode(code);
 
-        switch(code) {
-        case 32:
-            key = 'SPACE'; break;
-        case 37:
-            key = 'LEFT'; break;
-        case 38:
-            key = 'UP'; break;
-        case 39:
-            key = 'RIGHT'; break;
-        case 40:
-            key = 'DOWN'; break;
-        default:
-            // Convert ASCII codes to letters
-            key = String.fromCharCode(code);
+        switch (key) {
+            case 'W': {
+                player.upPressed = status;
+            } break;
+            case 'A': {
+                player.leftPressed = status;
+            } break;
+            case 'S': {
+                player.downPressed = status;
+            } break;
+            case 'D': {
+                player.rightPressed = status;
+            } break;
         }
 
-        socket.emit('setKey', {key: key, status: status});
-        pressedKeys[key] = status;
+        if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
+            console.log({key: key, status: status});
+            socket.emit('setKey', {key: key, status: status});
+            pressedKeys[key] = status;
+        }
     }
 
     document.addEventListener('keydown', function(e) {
@@ -42,6 +45,8 @@ var socket = io.connect(document.URL);
     window.input = {
         isDown: function(key) {
             return pressedKeys[key.toUpperCase()];
-        }
+        },
+        setSocket: function (s) { socket = s; },
+        setUserPlayer: function (p) {player = p;}
     };
 })();

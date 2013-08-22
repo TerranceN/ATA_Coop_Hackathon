@@ -2,7 +2,7 @@ var http = require("http"),
     url = require("url"),
     path = require("path"),
     fs = require("fs"),
-    Player = require("./common/player");
+    gameServer = require("./server/gameServer"),
     port = process.argv[2] || 8888;
 
 var app = http.createServer(function(request, response) {
@@ -46,16 +46,6 @@ var app = http.createServer(function(request, response) {
 
 app.listen(parseInt(port, 10));
 
-io = require("socket.io").listen(app);
+gameServer.init(app);
 
-io.sockets.on('connection', function (socket) {
-    socket.emit('news', { hello: 'world' });
-    socket.on('my other event', function (data) {
-        console.log(data);
-    });
-    socket.on('setKey', function (data) {
-        console.log(data);
-    });
-});
-
-console.log("Static file server running on port: " + port + "/\nCTRL + C to shutdown");
+console.log("Starting server running on port: " + port + "/\nCTRL + C to shutdown");
