@@ -13,8 +13,6 @@ var Player = function (id, socket, isServer) {
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
-    this.targetOffset = new Vector2();
-    this.targetOffsetCount = 0;
     this.size = 15;
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0, 1]);
 
@@ -188,13 +186,11 @@ Player.prototype.checkCollisions = function () {
 } 
 
 Player.prototype.draw = function (canvas, ctx) {
-    /*if (this.targetOffsetCount < 6) {
+    if (this.targetOffsetCount < 6 && !this.socket) {
         var drawPos = this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
-        this.targetOffsetCount += 1;
     } else {
         var drawPos = this.position;
-    }*/
-    var drawPos = this.position;
+    }
     
     // Render the player 
     ctx.beginPath();
@@ -204,6 +200,8 @@ Player.prototype.draw = function (canvas, ctx) {
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#000000';
     ctx.stroke();
+
+    this.render(canvas, ctx);
 }
 
 module.exports = Player;

@@ -169,7 +169,6 @@ function render() {
 
     for (var i = 0; i < players.length; i++) {
         players[i].draw(canvas, ctx);
-        players[i].render(canvas, ctx);
     }
 
     ctx.setTransform(1,0,0,1,0,0);
