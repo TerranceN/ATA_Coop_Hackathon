@@ -147,15 +147,18 @@ function render() {
 
     for (var i = 0; i < world.size.x; ++i) {
         for (var j = 0; j < world.size.y; ++j) {
+            var tile_url = 'client/img/grass.png';
             if (world.tiles[i][j] == 0) { // ground
-                ctx.fillStyle = '#dddddd';
-                ctx.fillRect(i*world.gridunit, j*world.gridunit, world.gridunit, world.gridunit);
+                var tile_url = 'client/img/road.png';
             } else if (world.tiles[i][j] == 1) { // wall
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(i*world.gridunit, j*world.gridunit, world.gridunit, world.gridunit);
+                var tile_url = 'client/img/wall.png';
             } else if (world.tiles[i][j] == -1) { // DEBUG
-                ctx.fillStyle = '#FCD116';
-                ctx.fillRect(i*world.gridunit, j*world.gridunit, world.gridunit, world.gridunit);            
+                var tile_url = 'none';
+            }
+            if (tile_url != 'none') {
+                ctx.drawImage(resources.get(tile_url),
+                  i*world.gridunit, j*world.gridunit,
+                  world.gridunit, world.gridunit);
             }
         }
     }
@@ -203,6 +206,11 @@ resources.load([
     'client/img/hats/hat1.png',
     'client/img/hats/hat2.png',
     'client/img/hats/hat3.png',
-    'client/img/hats/hat4.png'
+    'client/img/hats/hat4.png',
+    'client/img/road.png',
+    'client/img/water.png',
+    'client/img/grass.png',
+    'client/img/wall.png',
+    'client/img/attack.png'
 ]);
 resources.onReady(init);

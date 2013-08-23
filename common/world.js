@@ -9,7 +9,7 @@ var nothing = 2;
 
 var World = function() {
 	this.size = new Vector2(35, 35);
-	this.gridunit = 20;
+	this.gridunit = 32;
 
 	this.width = this.size.x * this.gridunit;
 	this.height = this.size.y * this.gridunit;
