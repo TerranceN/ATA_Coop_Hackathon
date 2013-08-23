@@ -1,7 +1,6 @@
 var Entity = require('../common/entity');
 var Player = require('../common/player');
 var Vector2 = require('../common/vector2');
-var world = require("../common/world");
 
 Player.prototype.createListeners = function (socket, isServer) {
     var player = this;

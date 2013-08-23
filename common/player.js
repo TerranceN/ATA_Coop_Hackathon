@@ -22,7 +22,6 @@ var Player = function (id, socket, isServer) {
     this.visitedStructures = 0;
     this.hatId = Math.floor(Math.random() * hatSizes.length) + 1;
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
-    this.collisionTile = new Vector2(0,0);
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     //tracks player status. identity determines name and colour and can be changed
@@ -194,7 +193,6 @@ Player.prototype.checkCollisions = function (delta) {
     var j = Math.floor(this.position.y / this.world.gridunit);
     this.visitedStructures = this.visitedStructures | this.world.tiles[i][j].owner_id;
 
-    this.collisionTile = new Vector2(0,0);
     //COLLISION TEST
     var x2 = this.position.x + this.velocity.x * delta;
     var y2 = this.position.y + this.velocity.y * delta;
@@ -244,7 +242,6 @@ Player.prototype.checkCollisions = function (delta) {
             x2 = (newgx + 1) * gridunit + UR;
         }
         this.velocity.x = 0;
-        this.collisionTile = new Vector2(newgx, gy);
     }
 
     //vertical collision test
@@ -255,19 +252,18 @@ Player.prototype.checkCollisions = function (delta) {
             y2 = (newgy + 1) * gridunit + UR ;
         }
         this.velocity.y = 0;
-        this.collisionTile = new Vector2(gx, newgy);
     }
     //corner collision possible
     if (newgx != gx && newgy != gy && (this.world.tiles[newgx][newgy].id == 1)) {
         //want to use circle hitbox not square
         var ox = 0;
         var oy = 0;
-        if (newx > x2) {
+        if (newgx > gx) {
             ox = newgx * gridunit - x2;
         } else {
             ox = x2 - (newgx + 1) * gridunit;
         }
-        if (newy > y2) {
+        if (newgy > gy) {
             oy = newgy * gridunit - y2;
         } else {
             oy = y2 - (newgy + 1) * gridunit;
@@ -276,21 +272,26 @@ Player.prototype.checkCollisions = function (delta) {
         var xt = Math.sqrt(UR * UR - oy * oy);
         var yt = Math.sqrt(UR * UR - ox * ox);
         //x large enough
-        var xHit = ((newx > x2) && (x2 + xt > newgx * gridunit))
-            || ((newx < x2) && (x2 - xt < (newgx + 1) * gridunit));
-        var yHit = ((newy > y2) && (y2 + yt > newgy * gridunit))
-            || ((newy < y2) && (y2 - yt < (newgy + 1) * gridunit));
+        var xHit = ((newgx > gx) && (x2 + xt > newgx * gridunit))
+            || ((newgx < gx) && (x2 - xt < (newgx + 1) * gridunit));
+        var yHit = ((newgy > gy) && (gy + yt > newgy * gridunit))
+            || ((newgy < gy) && (y2 - yt < (newgy + 1) * gridunit));
         if (xHit && yHit) {
             //collided.
-            if (newx > x2) {
-                x2 = x2 + ox - UR;
+            var offset = new Vector2(ox, oy);
+            //move the player away from the point of collision until he is unit radius away
+            offset = offset.scaleTo(UR - offset.length());
+            ox = Math.abs(offset.x);
+            oy = Math.abs(offset.y);
+            if (newgx > gx) {
+                x2 = x2 - ox;// - UR;
             } else {
-                x2 = x2 - ox + UR;
+                x2 = x2 + ox;// + UR;
             }
-            if (newy > y2) {
-                y2 = y2 + oy - UR;
+            if (newgy > gy) {
+                y2 = y2 - oy;// - UR;
             } else {
-                y2 = y2 - oy + UR;
+                y2 = y2 + oy;// + UR;
             }
             //adjust velocity according to distance from point of collision to unit
             //point of collision is x2 +- ox I think
@@ -300,7 +301,6 @@ Player.prototype.checkCollisions = function (delta) {
             //var dy:Number = y2 - this.y;
             //vx = dx / dt;
             //vy = dy / dt;
-            this.collisionTile = new Vector2(newgx,newgy);
         }
     }
 

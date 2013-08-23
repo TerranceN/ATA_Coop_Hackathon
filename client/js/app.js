@@ -10,6 +10,7 @@ var userPlayer;
 var players = [];
 var entities = [];
 var world;
+var visionRange = 300;
 
 //chat parameters
 var isTyping = false;
@@ -197,9 +198,6 @@ function render() {
             } else if (userPlayer.world.tiles[i][j].id == -1) { // DEBUG
                 var tile_url = 'none';
             }
-            if (i == userPlayer.collisionTile.x && j == userPlayer.collisionTile.y) {
-                tile_url = 'client/img/water.png';
-            }
             if (tile_url != 'none') {
                 ctx.drawImage(resources.get(tile_url),
                   i*userPlayer.world.gridunit, j*userPlayer.world.gridunit,
@@ -216,16 +214,29 @@ function render() {
     ctx.strokeStyle = '#000000';
     ctx.stroke();
 
-    for (var i = 0; i < players.length; i++) {
-        players[i].draw(canvas, ctx);
-    }
+    userPlayer.world.draw(canvas, ctx);
     for (var i = 0; i < entities.length; i++) {
         entities[i].render(canvas, ctx);
     }
-
-    //world.draw(canvas, ctx);
+    for (var i = 0; i < players.length; i++) {
+        players[i].draw(canvas, ctx);
+    }
 
     ctx.setTransform(1,0,0,1,0,0);
+
+    //draw max vision range effect
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.arc(canvas.width/2, canvas.height/2, visionRange, 0, 2*Math.PI, true);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.arc(canvas.width/2, canvas.height/2, visionRange*0.7, 0, 2*Math.PI, true);
+    //ctx.arc(canvas.width/2, canvas.height/2, visionRange, 0, 2*Math.PI, true);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fill();
 
     // Draw minimap
     var minimapTileSize = 4;
@@ -249,6 +260,7 @@ function render() {
     var playerTile = userPlayer.world.toTileCoord(userPlayer.position);
     ctx.fillStyle = "#FBDB0C";
     ctx.fillRect(playerTile.x*minimapTileSize, playerTile.y*minimapTileSize, minimapTileSize, minimapTileSize);
+
 };
 
 function sendMessage(){
