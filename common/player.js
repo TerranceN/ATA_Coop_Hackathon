@@ -3,12 +3,6 @@ var World = require('./world');
 var Sprite = require('./sprite');
 var Entity = require('./entity');
 
-var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
-var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
-var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
-var playerSpeed = 1500;
-var playerDamping = 8;
-
 var hatSizes = [
     [28, 24],
     [24, 29],
@@ -26,7 +20,6 @@ var Player = function (id, socket, isServer) {
     this.visitedStructures = 0;
     this.hatId = 4;//Math.floor(Math.random() * hatSizes.length) + 1;
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
-    this.colliding = false
     this.collisionTile = new Vector2(0,0);
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
@@ -54,11 +47,11 @@ var Player = function (id, socket, isServer) {
     }
 };
 
-Player.COLORS = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
-Player.NAMES = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
-var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
-Player.SPEED = 750;
-Player.DAMPING = 4;
+Player.COLORS = ['#44ff44', '#ff4444', '#4444ff', '#99cccc', '#856788', '#856448'];
+Player.NAMES = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue', 'name 5', 'name 6'];
+var spawnPositions = [new Vector2(100, 100)];//, new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
+Player.SPEED = 1500;
+Player.DAMPING = 8;
 
 var sign = function (num) {
     if (num < 0) {
@@ -139,6 +132,12 @@ Player.prototype.getSmoothedPosition = function () {
 
 
 Player.prototype.checkCollisions = function (delta) {
+
+    // Track which rooms the user has been to
+    var i = Math.floor(this.position.x / this.world.gridunit);
+    var j = Math.floor(this.position.y / this.world.gridunit);
+    this.visitedStructures = this.visitedStructures | this.world.tiles[i][j].owner_id;
+
     this.collisionTile = new Vector2(0,0);
     //COLLISION TEST
     var x2 = this.position.x + this.velocity.x * delta;
@@ -266,7 +265,7 @@ Player.prototype.checkCollisions = function (delta) {
 };
 
 Player.prototype.getIdentityInfo = function ( identity ) {
-    return {'color': Player.COLORS[ this.identity % playerColors.length ], 'name': Player.NAMES[ this.identity % playerNames.length ]};
+    return {'color': Player.COLORS[ this.identity % Player.COLORS.length ], 'name': Player.NAMES[ this.identity % Player.NAMES.length ]};
 };
 
 Player.prototype.sendMessage = function (message) {

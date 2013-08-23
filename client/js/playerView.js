@@ -10,11 +10,7 @@ Player.prototype.draw = function (canvas, ctx) {
     if (this.alive) { 
         ctx.beginPath();
         ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-        if (this.colliding) {
-            ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
-        } else {
-            ctx.fillStyle = Player.COLORS[this.id % Player.COLORS.length];
-        }
+        ctx.fillStyle = Player.COLORS[this.identity % Player.COLORS.length];
         ctx.fill();
         ctx.lineWidth = 1;
         ctx.strokeStyle = '#000000';
