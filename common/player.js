@@ -28,9 +28,9 @@ var Player = function (id, socket, isServer) {
     this.alive = false;
 
     this.identity = id;
-    console.log(this.identity);
     this.role = 0;
     this.nextGame = true;
+    this.gameID = 0;
 
     this.hatId = this.identity % hatSizes.length;
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
@@ -90,9 +90,13 @@ Player.prototype.spawn = function(position) {
     this.position = position
 }
 
-Player.prototype.update = function (delta, players, world, io) {
+Player.prototype.update = function (delta, players, world, gameState, io) {
     this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
-    this.checkCollisions(delta, world);
+    if (gameState == 4 || gameState == 1 || gameState == 0) {
+        this.checkCollisions(delta, world);
+    } else {
+        this.position = this.position.add( this.velocity.scale(delta));
+    }
     this.velocity = this.velocity.add(this.velocity.scale(-delta * Player.DAMPING));
     
     var action;
@@ -123,7 +127,7 @@ Player.prototype.update = function (delta, players, world, io) {
                 interactive = interactives[i];
                 posDiff = interactive.position.add(this.position.scale(-1))
                 angleDiff = Math.atan2(posDiff.y, posDiff.x);
-                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 6 && posDiff.length() < 30) {
+                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 4 && posDiff.length() < 40) {
                     validInteractives.push({key:posDiff.length(), obj:interactive});
                 }
             }
@@ -164,7 +168,7 @@ Player.prototype.update = function (delta, players, world, io) {
                         if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 3) {
                             player2.alive = false;
                             player2.socket.join('spectator');
-                            var corpse = new Searchable(world.getNextObjectID(), player2.position, angleDiff, Searchable.CORPSE);
+                            var corpse = new Searchable(world.getNextObjectId(), player2.position, angleDiff, Searchable.CORPSE);
                             world.searchables.push(corpse);
                             io.sockets.emit('newEntity', {'id':corpse.id, 'position': corpse.position, 'angle':corpse.angle, 'type':Searchable.CORPSE});
                         }

@@ -8,6 +8,7 @@ var gameManager = function (IOin) {
     this.gameStart = 0;
     this.lastActive = Date.now();
     this.world = new World();
+    this.gameID = 0;
     io = IOin;
 };
 
@@ -15,7 +16,8 @@ var gameManager = function (IOin) {
 gameManager.prototype.GAMEOVER = 0;
 gameManager.prototype.WAITINGFORPLAYERS = 1;
 gameManager.prototype.PREPARINGTOSTART = 2;
-gameManager.prototype.RUNNING = 3;
+gameManager.prototype.STARTING = 3;
+gameManager.prototype.RUNNING = 4;
 
 gameManager.prototype.newGame = function ( players ){
     //count up number of players who want to play
@@ -25,14 +27,16 @@ gameManager.prototype.newGame = function ( players ){
             activeplayers.push(players[x]);
         }
     }
+    console.log(activeplayers.length);
     
     if (activeplayers.length > minPlayers){
         if (this.state == this.PREPARINGTOSTART){
             //generate world and inform players
             console.log("generating world");
             this.world = new World(activeplayers.length);
-            io.sockets.emit('newgame', {'world': this.world});
-            io.sockets.emit('gamemessage', {'message': 'New game started!'});
+            this.gameID++;
+            io.sockets.emit('newgame', {'world': this.world, 'gameID':this.gameID});
+            io.sockets.emit('gamemessage', {'message': 'Game initializing.'});
 
             //assign identities to players
             startidentity = 0;
@@ -42,7 +46,9 @@ gameManager.prototype.newGame = function ( players ){
                 players[x].position = this.world.getRandomSpawnPos();
                 players[x].identity = startidentity;
                 players[x].role = 0;
+                players[x].visitedStructures = 0;
                 info = players[x].getIdentityInfo();
+                console.log("init player ", players[x].id);
                 players[x].socket.emit('gamemessage', {'message': "You are <span style='color:" + info['color'] + ";'>" + info['name'] + "</span>"});
                 startidentity++;
             }
@@ -62,9 +68,9 @@ gameManager.prototype.newGame = function ( players ){
                 tries++;
             }
 
-            this.state = this.RUNNING;
+            this.state = this.STARTING;
             this.gameStart = Date.now();
-        } else {
+        } else if (this.state == this.WAITINGFORPLAYERS || this.state == this.GAMEOVER) {
             io.sockets.emit('gamemessage', {'message': 'Preparing to start new game...'});
             this.state = this.PREPARINGTOSTART;
             this.lastActive = Date.now();
@@ -77,8 +83,9 @@ gameManager.prototype.newGame = function ( players ){
 }
 
 gameManager.prototype.checkState = function ( players ) {
+    info = this.userCount( players );
+    console.log( this.state, info );
     if (this.state == this.RUNNING) {
-        info = this.userCount( players );
         if (info['all'] == 0) {
             this.endGame("Game Over: Doesn't seem like anyone wants to play.");
         }
@@ -88,17 +95,25 @@ gameManager.prototype.checkState = function ( players ) {
         if (info['assassin'] == 0){
             this.endGame("Game Over: The assassins are dead. Everyone is safe.");
         }
+    } else if (this.state == this.STARTING) {
+        if (info['ready'] == info['player']) {
+            this.state = this.RUNNING;
+        }
+
     }
 }
 
 gameManager.prototype.userCount = function ( players ) {
-    info = {'all':0, 'player':0, 'assassin':0};
+    info = {'all':0, 'ready':0, 'player':0, 'assassin':0};
     for (var x=0; x<players.length; x++) {
         if (players[x].alive) {
             if (players[x].role == 1) {
                 info['assassin']++;
             }
             info['player']++;
+        }
+        if (players[x].gameID == this.gameID) {
+            info['ready']++;
         }
         info['all']++;
     }

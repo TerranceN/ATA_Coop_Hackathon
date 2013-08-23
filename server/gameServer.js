@@ -22,7 +22,6 @@ var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
     p.spawn(game.world.getRandomSpawnPos());
     players.push(p);
-    console.log(p);
     return p;
 }
 
@@ -49,12 +48,15 @@ var initConnectionHandler = function () {
                 io.sockets.in('spectator').emit('chat', message);
             }
         });
+        socket.on('newgamerecieved', function(data){
+            player.gameID = data['gameID'];
+        })
     });
 }
 
 var updatePlayers = function (dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, game.world, io);
+        players[i].update(dt, players, game.world, game.state, io);
     }
 
     var now = Date.now();
@@ -72,11 +74,11 @@ var sendPlayerUpdates = function () {
     for (var i = 0; i < players.length; i++) {
         player = players[i];
         items = []
-        for (var i = 0; i < player.items.length; ++i) {
+        for (var k = 0; k < player.items.length; ++k) {
             items.push([]);
-            for (var j = 0; j < player.items[i].length; ++j) {
-                item = player.items[i][j];
-                items[i].push({"id":item.id, "type":item.type});
+            for (var j = 0; j < player.items[k].length; ++j) {
+                item = player.items[k][j];
+                items[k].push({"id":item.id, "type":item.type});
             }
         }
         playerData.push({
@@ -91,7 +93,8 @@ var sendPlayerUpdates = function () {
 
     io.sockets.emit('playerUpdate', {
             'timestamp': time,
-            'players': playerData});
+            'players': playerData,
+            'gameState': game.state});
 }
 
 var gameLoop = function (lastTime) {
@@ -104,7 +107,6 @@ var gameLoop = function (lastTime) {
     if (game.state != game.RUNNING && now - game.lastActive > 3000 ){
         game.newGame( players );
     }
-
 
     updatePlayers(dt);
 

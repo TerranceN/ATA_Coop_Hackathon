@@ -11,7 +11,7 @@ var userPlayer;
 var players = [];
 var entities = [];
 var world = new World();
-var visionRange = 300;
+var gameState = 0;
 
 //chat parameters
 var isTyping = false;
@@ -73,6 +73,7 @@ var init = function init() {
                 var timestamp = data['timestamp'];
 
                 if (timestamp > newestMessageTime) {
+                    gameState = data['gameState'];
                     var playerUpdates = data['players'];
 
                     for (var i = 0; i < playerUpdates.length; i++) {
@@ -126,6 +127,8 @@ var init = function init() {
                 if (typeof(data['world']) != 'undefined') {
                     console.log(data['world']);
                     world.make(data['world']);
+                    userPlayer.gameID = data['gameID'];
+                    socket.emit('newgamerecieved', {'gameID': userPlayer.gameID});
                 }
             });
 
@@ -163,7 +166,7 @@ function update(dt) {
 
 function updateEntities(dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, world);
+        players[i].update(dt, players, world, gameState);
     }
     for (var i = 0; i < entities.length; i++) {
         entities[i].updateAnimation(dt);
@@ -186,20 +189,16 @@ function render() {
     //ctx.translate(cameraOffset.x, cameraOffset.y);
 
     // Fill the screen gray (the out of bounds area)
-    ctx.fillStyle = '#222222';
+    ctx.fillStyle = '#111111';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Fill the area of the world that is in bounds as white
     ctx.translate(cameraOffset.x, cameraOffset.y);
-    ctx.beginPath();
-    ctx.rect(0, 0, world.width, world.height);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
 
     // Draw map
     for (var i = 0; i < world.size.x; ++i) {
         for (var j = 0; j < world.size.y; ++j) {
-            var tile_url = 'client/img/grass.png';
+            var tile_url = 'client/img/dark.png';
             if (world.tiles[i][j].id == 0) { // ground
                 var tile_url = 'client/img/road.png';
             } else if (world.tiles[i][j].id == 1) { // wall
@@ -215,24 +214,17 @@ function render() {
         }
     }
 
-    // outline the edge of the world]
-    //ctx.translate(cameraOffset.x, cameraOffset.y);
-    ctx.beginPath();
-    ctx.rect(0, 0, world.width, world.height);
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#000000';
-    ctx.stroke();
-
     world.draw(canvas, ctx);
     for (var i = 0; i < entities.length; i++) {
         entities[i].render(canvas, ctx);
     }
     for (var i = 0; i < players.length; i++) {
-        players[i].draw(canvas, ctx);
+        players[i].draw(canvas, ctx, world);
     }
 
     ctx.setTransform(1,0,0,1,0,0);
 
+    var visionRange = userPlayer.interacting ? 140 : 300;
     //draw max vision range effect
     ctx.beginPath();
     ctx.rect(0, 0, canvas.width, canvas.height);
@@ -324,6 +316,7 @@ resources.load([
     'client/img/rug.png',
     'client/img/crate.png',
     'client/img/table.png',
-    'client/img/key.png'
+    'client/img/key.png',
+    'client/img/dark.png'
 ]);
 resources.onReady(init);

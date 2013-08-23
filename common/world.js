@@ -15,7 +15,7 @@ var World = function( numPlayers ) {
 	if (typeof(numPlayers) == 'undefined') {
 		numPlayers = 5;
 	}
-	this.size = new Vector2( numPlayers * 10, numPlayers * 10 );
+	this.size = new Vector2( numPlayers * 12, numPlayers * 12 );
 	this.gridunit = 32;
 	this.lastStructureId = 1;
 	this.numPlayers = numPlayers;
@@ -77,11 +77,10 @@ World.prototype.make = function(other) {
 World.prototype.generate = function() {
 	var maxSize = 13;
 	var minSize = 8;
-	var radius = 10;
 
 	var i = 0;
 	var finalRooms = 0;
-	var retries = this.numPlayers * 10;
+	var retries = this.numPlayers * 15;
 	var rooms = this.numPlayers * 6;
 	for (i; i < rooms; ++i) {
 		var size = new Vector2(Math.floor(Math.random() * (maxSize - minSize) + minSize),
@@ -305,6 +304,8 @@ World.prototype.createObjects = function() {
 	for (var i = 0; i < numRugs; ++i) {
 		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
 		var searchable;
+		
+		var type = Math.floor(Math.random() * 3);
 		if (type == 0) {
 			searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), 0, Searchable.CRATE, 3000);
 		} else {
@@ -316,7 +317,6 @@ World.prototype.createObjects = function() {
 		var pos = new Vector2(room.bounds.x + 1 + Math.floor(Math.random() * (room.bounds.width - 2 - Math.ceil(searchable.size.x / this.gridunit))),
 			room.bounds.y + 1 + Math.floor(Math.random() * (room.bounds.height - 2 - Math.ceil(searchable.size.y / this.gridunit)))).scale(this.gridunit);
 
-		var type = Math.floor(Math.random() * 3);
 		searchable.position = searchable.position.add(searchable.size.scale(1/2)).add(pos);
 
 		this.searchables.push(searchable);
