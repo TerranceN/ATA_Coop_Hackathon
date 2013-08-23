@@ -3,8 +3,8 @@ var World = require('./world');
 var Sprite = require('./sprite');
 var Entity = require('./entity');
 
-var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
-var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
+var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc', "#FFFFFF"];
+var playerNames = ['Luke Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue', 'Walter White'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
 var playerSpeed = 1500;
 var playerDamping = 8;
@@ -13,8 +13,8 @@ var hatSizes = [
     [28, 24],
     [24, 29],
     [28, 31],
-    [28, 25],
-    [24, 29]
+    [24, 29],
+    [28, 25]
 ]
 
 var Player = function (id, socket, isServer) {

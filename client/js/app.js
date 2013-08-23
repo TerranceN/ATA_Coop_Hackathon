@@ -272,6 +272,7 @@ resources.load([
     'client/img/hats/hat2.png',
     'client/img/hats/hat3.png',
     'client/img/hats/hat4.png',
+    'client/img/hats/hat5.png',
     'client/img/road.png',
     'client/img/water.png',
     'client/img/grass.png',
