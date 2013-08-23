@@ -6,8 +6,8 @@ var Entity = require('./entity');
 var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
 var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
-var playerSpeed = 30;
-var playerDamping = 6;
+var playerSpeed = 750;
+var playerDamping = 4;
 
 var hatSizes = [
     [28, 24],
@@ -31,7 +31,7 @@ var Player = function (id, socket, isServer, io) {
     this.alive = true;
     this.identity = id;
 
-    this.controlsDirection = new Vector2();
+    this.controlForce = new Vector2();
     this.upPressed = false;
     this.downPressed = false;
     this.leftPressed = false;
@@ -67,100 +67,12 @@ Player.prototype.setHatId = function(hatId) {
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
 }
 
-Player.prototype.setKey = function (event, status) {
-    var code = event.keyCode;
-    var key = String.fromCharCode(code);
 
-    switch (key) {
-        case 'W': {
-            this.upPressed = status;
-        } break;
-        case 'A': {
-            this.leftPressed = status;
-        } break;
-        case 'S': {
-            this.downPressed = status;
-        } break;
-        case 'D': {
-            this.rightPressed = status;
-        } break;
-        case 'Q': {
-            // Attack button was previously released and is now pressed.
-            if (status && !this.attackPressed) {
-                this.socket.emit("attack", {angle: this.angle});
-            }
-            this.attackPressed = status;
-        }
-    }
 
-    if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
-        this.socket.emit('setKey', {key: key, status: status});
-    }
-}
 
-Player.prototype.createListeners = function (socket, isServer, io) {
-    var player = this;
-    if (isServer) {
-        socket.on('setKey', function (data) {
-            if (data['key'] == 'W') {
-                player.upPressed = data['status'];
-            } else if (data['key'] == 'S') {
-                player.downPressed = data['status'];
-            } else if (data['key'] == 'A') {
-                player.leftPressed = data['status'];
-            } else if (data['key'] == 'D') {
-                player.rightPressed = data['status'];
-            }
-        });
-
-        socket.on('attack', function (data) {
-            player.angle = data['angle'];
-            if (io) {
-                io.sockets.emit('newEntity', {'position': player.position, 'angle':player.angle, 'type':Entity.ATTACK});
-            }
-        });
-
-    } else {
-        document.addEventListener('keydown', function(e) {
-            player.setKey(e, true);
-        });
-
-        document.addEventListener('keyup', function(e) {
-            player.setKey(e, false);
-        });
-
-        window.addEventListener('blur', function() {
-            player.upPressed = false;
-            player.downPressed = false;
-            player.leftPressed = false;
-            player.rightPressed = false;
-        });
-
-        document.addEventListener('mousemove', function (evt) {
-            if (evt.target == canvas) {
-                if (evt.offsetX) {
-                    mouse = new Vector2(evt.offsetX, evt.offsetY);
-                }
-                else if (evt.layerX) {
-                    mouse = new Vector2(evt.layerX, evt.layerY);
-                }
-
-                var mouseDiff = mouse.add(new Vector2(-canvas.width/2, -canvas.height/2));
-                player.angle = Math.atan2(mouseDiff.y, mouseDiff.x);
-            }
-        }, false);
-    }
-};
 
 Player.prototype.update = function (delta) {
-    if (typeof(this.socket) != 'undefined') {
-        var controlsDirection = new Vector2();
-        controlsDirection.y -= this.upPressed ? 1 : 0;
-        controlsDirection.y += this.downPressed ? 1 : 0;
-        controlsDirection.x -= this.leftPressed ? 1 : 0;
-        controlsDirection.x += this.rightPressed ? 1 : 0;
-        this.velocity = this.velocity.add(controlsDirection.getNormalized().scale(playerSpeed));
-    }
+    this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(playerSpeed * delta));
     this.position = this.position.add(this.velocity.scale(delta));
     this.checkCollisions(delta);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
