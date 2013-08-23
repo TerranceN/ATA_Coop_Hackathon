@@ -10,6 +10,7 @@ var userPlayer;
 var players = [];
 var entities = [];
 var world;
+var visionRange = 300;
 
 //chat parameters
 var isTyping = false;
@@ -223,6 +224,20 @@ function render() {
 
     ctx.setTransform(1,0,0,1,0,0);
 
+    //draw max vision range effect
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.arc(canvas.width/2, canvas.height/2, visionRange, 0, 2*Math.PI, true);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.arc(canvas.width/2, canvas.height/2, visionRange*0.7, 0, 2*Math.PI, true);
+    //ctx.arc(canvas.width/2, canvas.height/2, visionRange, 0, 2*Math.PI, true);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fill();
+
     // Draw minimap
     var minimapTileSize = 4;
     for (var i = 0; i < userPlayer.world.size.x; ++i) {
@@ -245,6 +260,7 @@ function render() {
     var playerTile = userPlayer.world.toTileCoord(userPlayer.position);
     ctx.fillStyle = "#FBDB0C";
     ctx.fillRect(playerTile.x*minimapTileSize, playerTile.y*minimapTileSize, minimapTileSize, minimapTileSize);
+
 };
 
 function sendMessage(){
