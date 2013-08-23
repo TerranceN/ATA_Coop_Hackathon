@@ -3,15 +3,11 @@ var World = require('./world');
 var Sprite = require('./sprite');
 var Entity = require('./entity');
 
-<<<<<<< Updated upstream
-
-=======
 var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
 var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
 var playerSpeed = 1500;
 var playerDamping = 8;
->>>>>>> Stashed changes
 
 var hatSizes = [
     [28, 24],
