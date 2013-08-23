@@ -306,6 +306,7 @@ resources.load([
     'client/img/wall.png',
     'client/img/attack.png',
     'client/img/rug.png',
+    'client/img/crate.png',
     'client/img/table.png'
 ]);
 resources.onReady(init);
