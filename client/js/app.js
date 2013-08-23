@@ -177,6 +177,7 @@ function render() {
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
+    // Draw map
     for (var i = 0; i < userPlayer.world.size.x; ++i) {
         for (var j = 0; j < userPlayer.world.size.y; ++j) {
             var tile_url = 'client/img/grass.png';
@@ -194,7 +195,7 @@ function render() {
             }
         }
     }
-    
+
     // outline the edge of the world]
     //ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
@@ -211,6 +212,29 @@ function render() {
     }
 
     ctx.setTransform(1,0,0,1,0,0);
+
+    // Draw minimap
+    var minimapTileSize = 4;
+    for (var i = 0; i < userPlayer.world.size.x; ++i) {
+        for (var j = 0; j < userPlayer.world.size.y; ++j) {
+            var color = 'none';
+            if (userPlayer.world.tiles[i][j] == 0) { // ground
+                color = '#8E5A26';
+            } else if (userPlayer.world.tiles[i][j] == 1) { // wall
+                color  = '#171717';
+            } else if (userPlayer.world.tiles[i][j] == -1) { // DEBUG
+                color = '#FFFFFF';
+            }
+            if (color != 'none') {
+                ctx.fillStyle = color;
+                ctx.fillRect(i*minimapTileSize, j*minimapTileSize, minimapTileSize, minimapTileSize);
+            }
+        }
+    }
+    // Draw player on minimap
+    var playerTile = userPlayer.world.toTileCoord(userPlayer.position);
+    ctx.fillStyle = "#FBDB0C";
+    ctx.fillRect(playerTile.x*minimapTileSize, playerTile.y*minimapTileSize, minimapTileSize, minimapTileSize);
 };
 
 function sendMessage(){
