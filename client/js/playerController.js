@@ -34,15 +34,19 @@ Player.prototype.setKey = function (event, status) {
             switch (key) {
                 case 'W': case ',': {
                     this.upPressed = status;
+                    this.downPressed = !this.upPressed && this.downPressed;
                 } break;
                 case 'A': {
                     this.leftPressed = status;
+                    this.rightPressed = !this.leftPressed && this.rightPressed;
                 } break;
                 case 'S': case 'O': {
                     this.downPressed = status;
+                    this.upPressed = !this.downPressed && this.upPressed;
                 } break;
                 case 'D': case 'E': {
                     this.rightPressed = status;
+                    this.leftPressed = !this.rightPressed && this.leftPressed;
                 } break;
             }
         }
