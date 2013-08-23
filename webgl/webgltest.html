@@ -7,6 +7,23 @@
 <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/glMatrix-0.9.5.min.js"></script>
 <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/webgl-utils.js"></script>
 
+<script id="all-or-nothing" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+
+    uniform sampler2D uSampler;
+
+    void main(void) {
+        vec4 fragC = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+        if (fragC.a > 0.3) {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        } else {
+            gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        }
+    }
+</script>
+
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
 
