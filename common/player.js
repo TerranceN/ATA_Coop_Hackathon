@@ -28,8 +28,8 @@ var Player = function (id, socket, isServer) {
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     //tracks player status. identity determines name and colour and can be changed
-    this.alive = true;
-    this.identity = id;
+    this.alive = false;
+    this.identity = 0;
     this.role = 0;
     this.nextGame = true;
 
