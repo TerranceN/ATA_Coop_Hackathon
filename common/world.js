@@ -58,7 +58,7 @@ World.prototype.getSpawn = function(){
 }
 
 World.prototype.activeObjective = function (player) {
-    return this.rooms[this.objectiveRoomIdx].bounds.contains(player.position);
+    return this.rooms[this.objectiveRoomIdx].bounds.contains(player.position.scale(1/this.gridunit));
 }
 
 World.prototype.make = function(other) {

@@ -232,6 +232,9 @@ function render() {
                 var tile_url = 'client/img/road.png';
             } else if (world.tiles[i][j].id == 1) { // wall
                 var tile_url = 'client/img/wall.png';
+                if (world.tiles[i][j].owner_id == world.rooms[world.objectiveRoomIdx].id) {
+                    var tile_url = 'client/img/grass.png';
+                }
             } else if (world.tiles[i][j].id == -1) { // DEBUG
                 var tile_url = 'none';
             } else if (world.tiles[i][j].id == 3) { // corridor
