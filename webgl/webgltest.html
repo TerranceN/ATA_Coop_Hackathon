@@ -7,15 +7,261 @@
 <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/glMatrix-0.9.5.min.js"></script>
 <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/webgl-utils.js"></script>
 
-<script id="all-or-nothing" type="x-shader/x-fragment">
+<script id="makeShadows" type="x-shader/x-fragment">
     precision mediump float;
 
-    varying vec2 vTextureCoord;
+    varying vec2 vTexCoord0;
+
+    uniform sampler2D uSampler;
+    uniform vec2 resolution;
+
+    float GetShadowDistanceH() {
+        float u = vTexCoord0.x;
+        float v = vTexCoord0.y;
+
+        u = abs(u-0.5) * 2.0;
+        v = v * 2.0 - 1.0;
+        float v0 = v/u;
+        v0 = (v0 + 1.0) / 2.0;
+
+        vec2 newCoords = vec2(vTexCoord0.x,v0);
+        //horizontal info was stored in the Red component
+        return texture2D(uSampler, newCoords).r;
+    }
+
+    float GetShadowDistanceV() {
+        float u = vTexCoord0.y;
+        float v = vTexCoord0.x;
+
+        u = abs(u-0.5) * 2.0;
+        v = v * 2.0 - 1.0;
+        float v0 = v/u;
+        v0 = (v0 + 1.0) / 2.0;
+
+        vec2 newCoords = vec2(vTexCoord0.y, v0);
+        //horizontal info was stored in the Red component
+        return texture2D(uSampler, newCoords).g;
+    }
+
+    void main(void) {
+        // distance of this pixel from the center
+        float distance = length(vTexCoord0 - 0.5);
+        distance *= resolution.x;
+         
+        //apply a 2-pixel bias
+        distance -= 2.0;
+         
+        //distance stored in the shadow map
+        float shadowMapDistance;
+        //coords in [-1,1]
+        float nY = 2.0*( vTexCoord0.y - 0.5);
+        float nX = 2.0*( vTexCoord0.x - 0.5);
+         
+        //we use these to determine which quadrant we are in
+        if(abs(nY)<abs(nX))
+        {
+            shadowMapDistance = GetShadowDistanceH();
+        }
+        else
+        {
+            shadowMapDistance = GetShadowDistanceV();
+        }
+         
+        //if distance to this pixel is lower than distance from shadowMap,
+        //then we are not in shadow
+        float light = distance < shadowMapDistance ? 1.0:0.0;
+        vec4 result = vec4(light);
+        result.b = length(vTexCoord0 - 0.5);
+        result.a = 1.0;
+        gl_FragColor = result;
+    }
+</script>
+
+<script id="reduction" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTexCoord0;
+
+    uniform sampler2D uSampler;
+    uniform vec2 resolution;
+
+    void main(void) {
+        vec4 color = texture2D(uSampler, vTexCoord0);
+        vec4 otherColor = texture2D(uSampler, vec2(vTexCoord0.x + 0.5 * resolution.x, vTexCoord0.y));
+
+        float resultRed = min(color.r, otherColor.r);
+        float resultGreen = min(color.g, otherColor.g);
+
+        gl_FragColor = vec4(0.9, 0.9, 0.0, 1.0);
+    }
+</script>
+
+<script id="test" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTexCoord0;
+
+    uniform sampler2D uSampler;
+    uniform vec2 resolution;
+
+    void main(void) {
+        vec4 color = texture2D(uSampler, vTexCoord0);
+        //compute distance from center
+        float distance = color.a<0.3?length(vTexCoord0 - 0.5):1.0;
+        //save it to the Red channel
+        distance *= resolution.x;
+        gl_FragColor = vec4(distance,0.0,0.0,1.0);
+    }
+
+    void main(void) {
+        //translate u and v into [-1 , 1] domain
+        float u0 = vTexCoord0.x * 2.0 - 1.0;
+        float v0 = vTexCoord0.y * 2.0 - 1.0;
+         
+        //then, as u0 approaches 0 (the center), v should also approach 0
+        v0 = v0 * abs(u0);
+        //convert back from [-1,1] domain to [0,1] domain
+        v0 = (v0 + 1.0) / 2.0;
+        //we now have the coordinates for reading from the initial image
+        vec2 newCoords = vec2(vTexCoord0.x, v0);
+         
+        //read for both horizontal and vertical direction and store them in separate channels
+         
+        float horizontal = texture2D(uSampler, newCoords).r;
+        float vertical = texture2D(uSampler, newCoords.yx).r;
+
+        gl_FragColor = vec4(horizontal, vertical, 0.0, 1.0);
+    }
+</script>
+
+// taken from https://gist.github.com/mattdesl/5286905
+<script id="shadowRender" type="x-shader/x-fragment">
+    #ifdef GL_ES
+    #define LOWP lowp
+    precision mediump float;
+    #else
+    #define LOWP
+    #endif
+
+    #define PI 3.14
+    varying vec2 vTexCoord0;
+    varying LOWP vec4 vColor;
+
+    uniform sampler2D uSampler;
+    uniform vec2 resolution;
+
+    uniform float softShadows;
+
+    //sample from the distance map
+    float sample(vec2 coord, float r) {
+      return step(r, texture2D(uSampler, coord).r);
+    }
+
+    void main(void) {
+        //rectangular to polar
+        vec2 norm = vTexCoord0.st * 2.0 - 1.0;
+        float theta = atan(norm.y, norm.x);
+        float r = length(norm);	
+        float coord = (theta + PI) / (2.0*PI);
+
+        //the tex coord to sample our 1D lookup texture	
+        //always 0.0 on y axis
+        vec2 tc = vec2(coord, 0.0);
+
+        //the center tex coord, which gives us hard shadows
+        float center = sample(vec2(tc.x, tc.y), r);
+
+        //we multiply the blur amount by our distance from center
+        //this leads to more blurriness as the shadow "fades away"
+        float blur = (1./resolution.x) * smoothstep(0., 1., r);
+
+        //now we use a simple gaussian blur
+        float sum = 0.0;
+
+        sum += sample(vec2(tc.x - 4.0*blur, tc.y), r) * 0.05;
+        sum += sample(vec2(tc.x - 3.0*blur, tc.y), r) * 0.09;
+        sum += sample(vec2(tc.x - 2.0*blur, tc.y), r) * 0.12;
+        sum += sample(vec2(tc.x - 1.0*blur, tc.y), r) * 0.15;
+
+        sum += center * 0.16;
+
+        sum += sample(vec2(tc.x + 1.0*blur, tc.y), r) * 0.15;
+        sum += sample(vec2(tc.x + 2.0*blur, tc.y), r) * 0.12;
+        sum += sample(vec2(tc.x + 3.0*blur, tc.y), r) * 0.09;
+        sum += sample(vec2(tc.x + 4.0*blur, tc.y), r) * 0.05;
+
+        //1.0 -> in light, 0.0 -> in shadow
+        float lit = mix(center, sum, softShadows);
+
+        //multiply the summed amount by our distance, which gives us a radial falloff
+        //then multiply by vertex (light) color
+        gl_FragColor = vColor * vec4(vec3(1.0), lit * smoothstep(1.0, 0.0, r));
+    }
+</script>
+
+// taken from https://gist.github.com/mattdesl/5286905
+<script id="shadowMap" type="x-shader/x-fragment">
+    #ifdef GL_ES
+    #define LOWP lowp
+    precision mediump float;
+    #else
+    #define LOWP
+    #endif
+
+    #define PI 3.14
+    varying vec2 vTexCoord0;
+    varying LOWP vec4 vColor;
+
+    uniform sampler2D uSampler;
+    uniform vec2 resolution;
+
+    //for debugging; use a constant value in final release
+    uniform float upScale;
+
+    //alpha threshold for our occlusion map
+    const float THRESHOLD = 0.75;
+
+    void main(void) {
+        float distance = 1.0;
+
+        for (float y=0.0; y<90000.0; y+=1.0) {
+            if (y >= resolution.y) {
+                break;
+            }
+            //rectangular to polar filter
+            vec2 norm = vec2(vTexCoord0.s, y/resolution.y) * 2.0 - 1.0;
+            float theta = PI*1.5 + norm.x * PI;
+            float r = (1.0 + norm.y) * 0.5;
+
+            //coord which we will sample from occlude map
+            vec2 coord = vec2(-r * sin(theta), -r * cos(theta))/2.0 + 0.5;
+
+            //sample the occlusion map
+            vec4 data = texture2D(uSampler, coord);
+
+            //the current distance is how far from the top we've come
+            float dst = y/resolution.y / upScale;
+
+            //if we've hit an opaque fragment (occluder), then get new distance
+            //if the new distance is below the current, then we'll use that for our ray
+            float caster = data.a;
+            if (caster > THRESHOLD) {
+                distance = min(distance, dst);
+            }
+        }
+        gl_FragColor = vec4(vec3(distance), 1.0);
+    }
+</script>
+
+<script id="allOrNothing" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec2 vTexCoord0;
 
     uniform sampler2D uSampler;
 
     void main(void) {
-        vec4 fragC = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+        vec4 fragC = texture2D(uSampler, vec2(vTexCoord0.s, vTexCoord0.t));
         if (fragC.a > 0.3) {
             gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         } else {
@@ -27,28 +273,30 @@
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
 
-    varying vec2 vTextureCoord;
+    varying vec2 vTexCoord0;
 
     uniform sampler2D uSampler;
 
     void main(void) {
-        gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+        gl_FragColor = texture2D(uSampler, vec2(vTexCoord0.s, vTexCoord0.t));
     }
 </script>
 
 <script id="shader-vs" type="x-shader/x-vertex">
     attribute vec3 aVertexPosition;
     attribute vec2 aTextureCoord;
+    attribute vec4 aColor;
 
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
 
-    varying vec2 vTextureCoord;
-
+    varying vec2 vTexCoord0;
+    varying vec4 vColor;
 
     void main(void) {
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-        vTextureCoord = aTextureCoord;
+        vTexCoord0 = aTextureCoord;
+        vColor = vec4(1.0, 1.0, 1.0, 1.0);
     }
 </script>
 
@@ -81,6 +329,7 @@
     function getShader(gl, id) {
         var shaderScript = document.getElementById(id);
         if (!shaderScript) {
+            console.log("could not find shader with id: " + id);
             return null;
         }
 
@@ -99,6 +348,7 @@
         } else if (shaderScript.type == "x-shader/x-vertex") {
             shader = gl.createShader(gl.VERTEX_SHADER);
         } else {
+            console.log("unrecognized shader type for shader with id: " + id);
             return null;
         }
 
@@ -114,7 +364,18 @@
     }
 
 
-    function makeShader(vertexShader, fragmentShader) {
+    function makeShader(vertexShaderName, fragmentShaderName) {
+        var vertexShader = getShader(gl, vertexShaderName);
+        var fragmentShader = getShader(gl, fragmentShaderName);
+
+        if (vertexShader == null) {
+            console.log("vertex shader, " + vertexShaderName + ", could not be loaded");
+        }
+
+        if (fragmentShader == null) {
+            console.log("fragment shader, " + fragmentShaderName + ", could not be loaded");
+        }
+
         var shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
@@ -126,17 +387,36 @@
 
         setShader(shaderProgram);
 
-        gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aVertexPosition"));
-        gl.enableVertexAttribArray(gl.getAttribLocation(shaderProgram, "aTextureCoord"));
+        shaderProgram.vertexAttribLocation = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        shaderProgram.textureAttribLocation = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+        shaderProgram.colorAttribLocation = gl.getAttribLocation(shaderProgram, "aColor");
+
+        gl.enableVertexAttribArray(shaderProgram.vertexAttribLocation);
+        gl.enableVertexAttribArray(shaderProgram.textureAttribLocation);
 
         return shaderProgram;
     }
 
-    function initShaders() {
-        var fragmentShader = getShader(gl, "shader-fs");
-        var vertexShader = getShader(gl, "shader-vs");
+    var defaultProgram;
+    var allOrNothingProgram;
+    var shadowMapProgram;
+    var shadowRenderProgram;
+    var testProgram;
+    var distanceProgram;
+    var reductionProgram;
+    var makeShadowsProgram;
 
-        var defaultProgram = makeShader(vertexShader, fragmentShader);
+    function initShaders() {
+        vertexShaderName = "shader-vs";
+ 
+        defaultProgram = makeShader(vertexShaderName, "shader-fs");
+        allOrNothingProgram = makeShader(vertexShaderName, "allOrNothing");
+        shadowMapProgram = makeShader(vertexShaderName, "shadowMap");
+        shadowRenderProgram = makeShader(vertexShaderName, "shadowRender");
+        testProgram = makeShader(vertexShaderName, "test");
+        distanceProgram = makeShader(vertexShaderName, "distance");
+        reductionProgram = makeShader(vertexShaderName, "reduction");
+        makeShadowsProgram = makeShader(vertexShaderName, "makeShadows");
 
         setShader(defaultProgram);
     }
@@ -208,9 +488,9 @@
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
         vertices = [
             50.0, 50.0,
-            306.0, 50.0,
-            306.0, 306.0,
-            50.0, 306.0
+            150.0, 50.0,
+            150.0, 150.0,
+            50.0, 150.0
         ];
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
@@ -279,6 +559,8 @@
     }
 
     var fbo1;
+    var fbo2;
+    var fbo3;
 
     function nextPOT(x) {
         var tmp = 2;
@@ -292,11 +574,13 @@
     var nextPOTWidth;
     var nextPOTHeight;
 
-    function newFBO() {
+    function newFBO(width, height) {
         var fbo = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-        fbo.width = nextPOTWidth;
-        fbo.height = nextPOTHeight;
+        fbo.width = nextPOT(width);
+        fbo.height = nextPOT(height);
+
+        console.log("making fbo with width and height: " + fbo.width + ", " + fbo.height);
 
         var renderTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, renderTexture);
@@ -316,11 +600,46 @@
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, renderTexture, 0);
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
 
+        newFBOVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, newFBOVertexPositionBuffer);
+        vertices = [
+            0.0, 0.0,
+            fbo.width, 0.0,
+            fbo.width, fbo.height,
+            0.0, fbo.height
+        ];
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        newFBOVertexPositionBuffer.itemSize = 2;
+        newFBOVertexPositionBuffer.numItems = 4;
+
+        newFBOVertexTextureCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, newFBOVertexTextureCoordBuffer);
+        vertices = [
+            0.0, 1.0,
+            1.0, 1.0,
+            1.0, 0.0,
+            0.0, 0.0
+        ];
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+        newFBOVertexTextureCoordBuffer.itemSize = 2;
+        newFBOVertexTextureCoordBuffer.numItems = 4;
+
+        newFBOVertexIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, newFBOVertexIndexBuffer);
+        var newFBOVertexIndices = [
+            0, 1, 2,      0, 2, 3,
+        ];
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(newFBOVertexIndices), gl.STATIC_DRAW);
+        newFBOVertexIndexBuffer.itemSize = 1;
+        newFBOVertexIndexBuffer.numItems = 6;
+
         fbo.texture = renderTexture;
         fbo.renderbuffer = renderbuffer;
-        fbo.vertexPositionBuffer = fullscreenVertexPositionBuffer;
-        fbo.vertexTextureCoordBuffer = fullscreenVertexTextureCoordBuffer;
-        fbo.vertexIndexBuffer = fullscreenVertexIndexBuffer;
+        fbo.vertexPositionBuffer = newFBOVertexPositionBuffer;
+        fbo.vertexTextureCoordBuffer = newFBOVertexTextureCoordBuffer;
+        fbo.vertexIndexBuffer = newFBOVertexIndexBuffer;
 
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindRenderbuffer(gl.RENDERBUFFER, null);
@@ -331,16 +650,14 @@
 
     function drawNeHeLogo() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.clearColor(0.0, 0.0, 0.0, 0.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
 
         mat4.identity(mvMatrix);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aVertexPosition"), squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(currentShader.vertexAttribLocation, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexTextureCoordBuffer);
-        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aTextureCoord"), squareVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(currentShader.textureAttribLocation, squareVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, neheTexture);
@@ -352,21 +669,21 @@
     }
 
     function drawFBO(fbo) {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.clearColor(1.0, 0.0, 0.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        pMatrix = mat4.ortho(0, fbo.width, fbo.height, 0, -1.0, 1.0);
+        gl.viewport(0, 0, fbo.width, fbo.height);
 
         mat4.identity(mvMatrix);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexPositionBuffer);
-        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aVertexPosition"), fbo.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(currentShader.vertexAttribLocation, fbo.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexTextureCoordBuffer);
-        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aTextureCoord"), fbo.vertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(currentShader.textureAttribLocation, fbo.vertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
         gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
+        gl.uniform2f(gl.getUniformLocation(currentShader, "resolution"), fbo.width, fbo.height);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fbo.vertexIndexBuffer);
         setMatrixUniforms();
@@ -375,12 +692,65 @@
 
     function drawScene() {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
-
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(allOrNothingProgram);
         drawNeHeLogo();
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        //gl.bindFramebuffer(gl.FRAMEBUFFER, fbo3);
+        //gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        //gl.clear(gl.COLOR_BUFFER_BIT);
+        //setShader(shadowMapProgram);
+        //gl.uniform1f(gl.getUniformLocation(currentShader, "upScale"), 1.0);
+        //drawFBO(fbo1);
 
+        //gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+        //gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        //gl.clear(gl.COLOR_BUFFER_BIT);
+        //setShader(shadowRenderProgram);
+        //gl.uniform1f(gl.getUniformLocation(currentShader, "softShadows"), 1.0);
+        //drawFBO(fbo3);
+
+        //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        //setShader(defaultProgram);
+        //gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        //gl.clear(gl.COLOR_BUFFER_BIT);
+        //gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+        //drawFBO(fbo1);
+        //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        //drawNeHeLogo();
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(distanceProgram);
         drawFBO(fbo1);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(testProgram);
+        drawFBO(fbo2);
+
+        //reduceFBO(fbo1);
+
+        //gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+        //gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        //gl.clear(gl.COLOR_BUFFER_BIT);
+        //setShader(defaultProgram);
+        //drawFBO(reductionSteps[0]);
+
+        //gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        //gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        //gl.clear(gl.COLOR_BUFFER_BIT);
+        //setShader(makeShadowsProgram);
+        //drawFBO(fbo2);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(defaultProgram);
+        drawFBO(fbo2);
     }
 
 
@@ -406,12 +776,42 @@
         currentShader = shader;
     }
 
+    var reductionSteps;
+
+    function initReductionSteps() {
+        reductionSteps = [];
+        var power = 0;
+        for (var i = 0; power < fbo1.width; i++) {
+            power = 2 << i;
+            var fbo = newFBO(power, fbo1.height);
+            reductionSteps.push(fbo);
+        }
+    }
+
+    function reduceFBO(fbo) {
+        setShader(reductionProgram);
+
+        for (var i = reductionSteps.length - 1; i >= 0; i--) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, reductionSteps[i]);
+            gl.clearColor(0.0, 0.0, 0.0, 0.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            if (i == reductionSteps.length - 1) {
+                drawFBO(fbo);
+            } else {
+                drawFBO(reductionSteps[i + 1]);
+            }
+        }
+    }
+
     function webGLStart() {
         var canvas = document.getElementById("lesson05-canvas");
         initGL(canvas);
         initShaders();
         initBuffers();
-        fbo1 = newFBO();
+        fbo1 = newFBO(gl.viewportWidth, gl.viewportHeight);
+        fbo2 = newFBO(gl.viewportWidth, gl.viewportHeight);
+        fbo3 = newFBO(256, 1);
+        initReductionSteps();
         initTexture();
 
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
