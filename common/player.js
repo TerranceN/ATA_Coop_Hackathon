@@ -14,6 +14,7 @@ var hatSizes = [
 ]
 
 var Player = function (id, socket, isServer) {
+    console.log('player');
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
@@ -24,7 +25,9 @@ var Player = function (id, socket, isServer) {
 
     //tracks player status. identity determines name and colour and can be changed
     this.alive = false;
+
     this.identity = id;
+    console.log(this.identity);
     this.role = 0;
     this.nextGame = true;
 
@@ -265,7 +268,7 @@ Player.prototype.checkCollisions = function (delta, world) {
     } 
 };
 
-Player.prototype.getIdentityInfo = function ( identity ) {
+Player.prototype.getIdentityInfo = function () {
     return {'color': Player.COLORS[ this.identity % Player.COLORS.length ], 'name': Player.NAMES[ this.identity % Player.NAMES.length ]};
 };
 
