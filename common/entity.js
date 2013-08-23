@@ -23,9 +23,8 @@ Entity.prototype.updateAnimation = function (dt) {
 };
 
 Entity.prototype.render = function (canvas, ctx) {
-    if (this.targetOffsetCount < 6 && !this.socket) {
-        var drawPos = this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
-        this.targetOffsetCount += 1;
+    if (typeof(this.getSmoothedPosition) != 'undefined') {
+        var drawPos = this.getSmoothedPosition();
     } else {
         var drawPos = this.position;
     }

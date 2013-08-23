@@ -29,6 +29,21 @@ var initConnectionHandler = function () {
             players.splice(players.indexOf(player), 1);
             io.sockets.emit('userDisconnected', {'id': player.id});
         });
+
+        socket.on('chat', function(message){
+            if (player.alive){
+                info = player.getIdentityInfo();
+                message['name'] = info['name'];
+                message['color'] = info['color'];
+                console.log(message);
+                io.sockets.emit('chat', message);
+            } else {
+                message['name'] = "Spectator" + player.id;
+                message['color'] = ""
+                console.log(message);
+                io.sockets.emit('chat', message);
+            }
+        });
     });
 }
 
@@ -45,12 +60,19 @@ var updatePlayers = function (dt) {
 }
 
 var sendPlayerUpdates = function () {
-    playerData = [];
+    var playerData = [];
+    var time = Date.now();
     for (var i = 0; i < players.length; i++) {
-        playerData.push({'id': players[i].id, 'position': players[i].position, 'velocity': players[i].velocity, 'angle': players[i].angle});
+        playerData.push({
+                'id': players[i].id,
+                'position': players[i].position,
+                'velocity': players[i].velocity,
+                'angle': players[i].angle});
     }
 
-    io.sockets.emit('playerUpdate', {'players': playerData});
+    io.sockets.emit('playerUpdate', {
+            'timestamp': time,
+            'players': playerData});
 }
 
 var gameLoop = function (lastTime) {

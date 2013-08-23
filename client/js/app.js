@@ -8,6 +8,12 @@ var userPlayer;
 var players = [];
 var entities = [];
 
+//chat parameters
+var isTyping = false;
+var chatInputBox = document.getElementById("chatinput");
+var chatOutputBox = document.getElementById("chatoutput");
+var chatSend = document.getElementById("chatsend");
+
 // A cross-browser requestAnimationFrame
 // See https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
 var requestAnimFrame = (function(){
@@ -24,10 +30,12 @@ var requestAnimFrame = (function(){
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
+var target = document.getElementById("canvas-box");
+target.parentNode.replaceChild(canvas, target);
 canvas.id = 'canvas';
 canvas.width = 800;
 canvas.height = 600;
-document.body.appendChild(canvas);
+var cameraOffset;
 
 // The main game loop
 var lastTime;
@@ -43,47 +51,60 @@ function main() {
 };
 
 var init = function init() {
+    chatSend.onclick = function (){sendMessage();};
     lastTime = Date.now();
     var socket = io.connect(document.URL);
+    var newestMessageTime = 0;
     socket.on('connectionAccepted', function(data) {
         if (typeof(data['id']) != 'undefined') {
             userPlayer = new Player(data['id'], socket);
             players.push(userPlayer);
 
             socket.on('playerUpdate', function(data) {
-                var playerUpdates = data['players'];
+                var timestamp = data['timestamp'];
 
-                for (var i = 0; i < playerUpdates.length; i++) {
-                    var thisPlayerUpdate = playerUpdates[i];
-                    var id = thisPlayerUpdate['id'];
+                if (timestamp > newestMessageTime) {
+                    var playerUpdates = data['players'];
 
-                    var foundPlayer = false;
-                    for (var j = 0; j < players.length; j++) {
-                        if (id == players[j].id) {
-                            var oldPosition = players[j].position.copy();
-                            players[j].position.x = thisPlayerUpdate['position'].x;
-                            players[j].position.y = thisPlayerUpdate['position'].y;
-                            players[j].velocity.x = thisPlayerUpdate['velocity'].x;
-                            players[j].velocity.y = thisPlayerUpdate['velocity'].y;
-                            // The angle of the current player is decided by his mouse position rather than the server.
-                            if (id != userPlayer.id) {
-                                players[j].angle = thisPlayerUpdate['angle'];
+                    for (var i = 0; i < playerUpdates.length; i++) {
+                        var thisPlayerUpdate = playerUpdates[i];
+                        var id = thisPlayerUpdate['id'];
+
+                        var foundPlayer = false;
+                        for (var j = 0; j < players.length; j++) {
+                            if (id == players[j].id) {
+                                var oldPosition = players[j].position.copy();
+                                players[j].position.x = thisPlayerUpdate['position'].x;
+                                players[j].position.y = thisPlayerUpdate['position'].y;
+                                players[j].velocity.x = thisPlayerUpdate['velocity'].x;
+                                players[j].velocity.y = thisPlayerUpdate['velocity'].y;
+                                players[j].targetOffset = oldPosition.add(players[j].position.scale(-1))
+                                players[j].targetOffsetCount = 0;
+                                // The angle of the current player is decided by his mouse position rather than the server.
+                                if (id != userPlayer.id) {
+                                    players[j].angle = thisPlayerUpdate['angle'];
+                                }
+                                foundPlayer = true;
                             }
-                            players[j].targetOffset = oldPosition.add(players[j].position.scale(-1))
-                            players[j].targetOffsetCount = 0;
-                            foundPlayer = true;
+                        }
+
+                        if (!foundPlayer) {
+                            var newPlayer = new Player(id);
+                            players.push(newPlayer);
+                            newPlayer.position.x = thisPlayerUpdate['position'].x;
+                            newPlayer.position.y = thisPlayerUpdate['position'].y;
+                            newPlayer.velocity.x = thisPlayerUpdate['velocity'].x;
+                            newPlayer.velocity.y = thisPlayerUpdate['velocity'].y;
                         }
                     }
-
-                    if (!foundPlayer) {
-                        var newPlayer = new Player(id);
-                        players.push(newPlayer);
-                        newPlayer.position.x = thisPlayerUpdate['position'].x;
-                        newPlayer.position.y = thisPlayerUpdate['position'].y;
-                        newPlayer.velocity.x = thisPlayerUpdate['velocity'].x;
-                        newPlayer.velocity.y = thisPlayerUpdate['velocity'].y;
-                    }
+                } else {
+                    console.log("Skipping update since " + timestamp + " >= " + newestMessageTime);
                 }
+            });
+
+            socket.on('chat', function (data) {
+                chatOutputBox.innerHTML = chatOutputBox.innerHTML + "<span style='color:" + data['color'] + ";'>" + data['name'] + "</span>: " + data['message'] + "<br>";
+                chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
             });
 
             socket.on('userDisconnected', function (data) {
@@ -135,16 +156,22 @@ function render() {
     ctx.setTransform(1,0,0,1,0,0);
 
     var canvasSize = new Vector2(canvas.width, canvas.height);
-    var screenOffset = canvasSize.scale(1/2).add(userPlayer.position.scale(-1));
+    var screenOffset = canvasSize.scale(1/2).add(userPlayer.getSmoothedPosition().scale(-1));
+    if (typeof(cameraOffset) == 'undefined') {
+        cameraOffset = screenOffset;
+    } else {
+        var difference = screenOffset.add(cameraOffset.scale(-1));
+        cameraOffset = cameraOffset.add(difference.scale(1/20));
+    }
 
-    //ctx.translate(screenOffset.x, screenOffset.y);
+    //ctx.translate(cameraOffset.x, cameraOffset.y);
 
     // Fill the screen gray (the out of bounds area)
-    ctx.fillStyle = '#cccccc';
+    ctx.fillStyle = '#222222';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Fill the area of the world that is in bounds as white
-    ctx.translate(screenOffset.x, screenOffset.y);
+    ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
     ctx.rect(0, 0, userPlayer.world.width, userPlayer.world.height);
     ctx.fillStyle = '#ffffff';
@@ -186,7 +213,7 @@ function render() {
     ctx.stroke();*/
 
     // outline the edge of the world]
-    ctx.translate(screenOffset.x, screenOffset.y);
+    //ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
     ctx.rect(0, 0, userPlayer.world.width, userPlayer.world.height);
     ctx.lineWidth = 3;
@@ -201,6 +228,14 @@ function render() {
     }
 
     ctx.setTransform(1,0,0,1,0,0);
+};
+
+function sendMessage(){
+    if (chatInputBox.value != ""){
+        userPlayer.sendMessage(chatInputBox.value);
+        chatInputBox.value = "";
+    }
+    return false;
 };
 
 resources.load([

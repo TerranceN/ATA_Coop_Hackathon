@@ -4,6 +4,7 @@ var Sprite = require('./sprite');
 var Entity = require('./entity');
 
 var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
+var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
 var playerSpeed = 30;
 var playerDamping = 6;
@@ -26,6 +27,10 @@ var Player = function (id, socket, isServer, io) {
     this.colliding = false
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
+    //tracks player status. identity determines name and colour and can be changed
+    this.alive = true;
+    this.identity = id;
+
     this.controlsDirection = new Vector2();
     this.upPressed = false;
     this.downPressed = false;
@@ -42,6 +47,9 @@ var Player = function (id, socket, isServer, io) {
         this.createListeners(socket, isServer, io);
     }
 };
+
+Player.ALIVE = 1;
+Player.DEAD = 0;
 
 var sign = function (num) {
     if (num < 0) {
@@ -159,6 +167,18 @@ Player.prototype.update = function (delta) {
     this.position = this.position.add(this.velocity.scale(delta));
     this.checkCollisions(delta);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
+
+    if (this.targetOffsetCount < 6) {
+        this.targetOffsetCount += 1;
+    }
+}
+
+Player.prototype.getSmoothedPosition = function () {
+    if (this.targetOffsetCount < 6) {
+        return this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
+    } else {
+        return this.position;
+    }
 }
 
 Player.prototype.checkCollisions = function (delta) {
@@ -192,14 +212,10 @@ Player.prototype.checkCollisions = function (delta) {
             }
         }
     }
-} 
+}
 
 Player.prototype.draw = function (canvas, ctx) {
-    if (this.targetOffsetCount < 6 && !this.socket) {
-        var drawPos = this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
-    } else {
-        var drawPos = this.position;
-    }
+    var drawPos = this.getSmoothedPosition();
     
     // Render the player 
     ctx.beginPath();
@@ -222,6 +238,14 @@ Player.prototype.draw = function (canvas, ctx) {
     ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
     this.hat.render(ctx);
     ctx.restore();
+}
+
+Player.prototype.getIdentityInfo = function ( identity ){
+    return {'color': playerColors[ this.identity % playerColors.length ], 'name': playerNames[ this.identity % playerNames.length ]};
+}
+
+Player.prototype.sendMessage = function (message) {
+    this.socket.emit('chat', {'message': message});
 }
 
 module.exports = Player;
