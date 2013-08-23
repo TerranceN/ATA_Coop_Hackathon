@@ -93,6 +93,9 @@ Player.prototype.spawn = function(position) {
     this.position = position
 }
 
+Player.prototype.update = function (delta) {
+    this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(playerSpeed * delta));
+
 Player.prototype.update = function (delta, players, io) {
     this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
     this.position = this.position.add(this.velocity.scale(delta));
