@@ -54,8 +54,8 @@ var Player = function (id, socket, isServer) {
     }
 };
 
-Player.COLORS = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
-Player.NAMES = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
+Player.COLORS = ['#44ff44', '#ff4444', '#4444ff', '#99cccc', '#FFFFFF'];
+Player.NAMES = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue', 'Walter White'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
 Player.SPEED = 750;
 Player.DAMPING = 4;
