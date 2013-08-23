@@ -82,7 +82,7 @@ World.prototype.generate = function() {
 	var i = 0;
 	var finalRooms = 0;
 	var retries = this.numPlayers * 15;
-	var rooms = this.numPlayers * 6;
+	var rooms = Math.min(this.numPlayers * 6, 31);
 	for (i; i < rooms; ++i) {
 		var size = new Vector2(Math.floor(Math.random() * (maxSize - minSize) + minSize),
 						Math.floor(Math.random() * (maxSize - minSize) + minSize));
@@ -143,6 +143,7 @@ World.prototype.connectRooms = function() {
 		unconnectedRooms.push(this.rooms[i]);
 	}
 
+	var poop = 0;
 	while(unconnectedRooms.length > 0) {
 		var roomA = unconnectedRooms[0];
 
@@ -170,9 +171,19 @@ World.prototype.connectRooms = function() {
 				roomB = this.rooms[Math.floor(Math.random() * this.rooms.length)];	
 			}
 			this.connect(roomA, roomB);
+			poop++;
 		}
 
 		unconnectedRooms.splice(0, 1);
+
+		if (poop >= 31) {
+			break;
+		}
+	}
+
+	// Remove Unconnected rooms so users can't spawn in them
+	for (var i = 0; i < unconnectedRooms.length; ++i) {
+		unconnectedRooms[i].center = this.rooms[0].center;
 	}
 
 	this.secondPass();
