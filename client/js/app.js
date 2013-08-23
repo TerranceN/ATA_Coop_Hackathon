@@ -9,6 +9,7 @@ var Entity = require("../../common/entity");
 var userPlayer;
 var players = [];
 var entities = [];
+var world;
 
 //chat parameters
 var isTyping = false;
@@ -45,6 +46,7 @@ function main() {
     var now = Date.now();
     var dt = (now - lastTime) / 1000.0;
 
+    dt = Math.min(dt, 1000/60);
     update(dt);
     render();
 
@@ -98,6 +100,7 @@ var init = function init() {
                             newPlayer.position.y = thisPlayerUpdate['position'].y;
                             newPlayer.velocity.x = thisPlayerUpdate['velocity'].x;
                             newPlayer.velocity.y = thisPlayerUpdate['velocity'].y;
+                            newPlayer.world = world;
                         }
                     }
                 } else {
@@ -129,9 +132,9 @@ var init = function init() {
             main();
         }
         if (typeof(data['world']) != 'undefined') {
-            console.log(data['world']);
-            userPlayer.world = new World();
-            userPlayer.world.make(data['world']);
+            world = new World();
+            world.make(data['world']);
+            userPlayer.world = world;
         }
     });
 }
@@ -192,6 +195,9 @@ function render() {
                 var tile_url = 'client/img/wall.png';
             } else if (userPlayer.world.tiles[i][j] == -1) { // DEBUG
                 var tile_url = 'none';
+            }
+            if (i == userPlayer.collisionTile.x && j == userPlayer.collisionTile.y) {
+                tile_url = 'client/img/water.png';
             }
             if (tile_url != 'none') {
                 ctx.drawImage(resources.get(tile_url),

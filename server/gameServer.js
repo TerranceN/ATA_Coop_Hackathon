@@ -19,6 +19,7 @@ var getNextPlayerId = function () {
 var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
     players.push(p);
+    p.world = world;
     return p;
 }
 
@@ -80,7 +81,7 @@ var sendPlayerUpdates = function () {
 var gameLoop = function (lastTime) {
     var now = Date.now();
     var dt = (now - lastTime) / 1000;
-
+    dt = Math.min(dt, 1000/60);
     updatePlayers(dt);
 
     lastTime = now;
