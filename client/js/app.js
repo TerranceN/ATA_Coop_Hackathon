@@ -205,6 +205,8 @@ function render() {
                 var tile_url = 'client/img/wall.png';
             } else if (world.tiles[i][j].id == -1) { // DEBUG
                 var tile_url = 'none';
+            } else if (world.tiles[i][j].id == 3) { // corridor
+                var tile_url = 'client/img/corridor.png';
             }
             if (tile_url != 'none') {
                 ctx.drawImage(resources.get(tile_url),
@@ -250,12 +252,15 @@ function render() {
                 color  = '#171717';
             } else if (world.tiles[i][j].id == -1) { // DEBUG
                 color = '#FFFFFF';
+            } else if (world.tiles[i][j].id == 3) { // Corridor
+                color = '#7E7E7E';
             }
             if ( world.tiles[i][j] == 'undefined'){
                 console.log(world);
             }
 
-            if (color != 'none' && (userPlayer.visitedStructures & world.tiles[i][j].owner_id)) {
+            if (color != 'none' && ((world.tiles[i][j].type == 0 && userPlayer.visitedRooms & world.tiles[i][j].owner_id) ||
+                (world.tiles[i][j].type == 1 && userPlayer.visitedHalls & world.tiles[i][j].owner_id))) {
                 ctx.fillStyle = color;
                 ctx.fillRect(i*minimapTileSize, j*minimapTileSize, minimapTileSize, minimapTileSize);
             }
@@ -317,6 +322,7 @@ resources.load([
     'client/img/crate.png',
     'client/img/table.png',
     'client/img/key.png',
-    'client/img/dark.png'
+    'client/img/dark.png',
+    'client/img/corridor.png'
 ]);
 resources.onReady(init);

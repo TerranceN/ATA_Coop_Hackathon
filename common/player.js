@@ -21,7 +21,8 @@ var Player = function (id, socket, isServer) {
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
     this.size = 15;
-    this.visitedStructures = 0;
+    this.visitedRooms = 0;
+    this.visitedHalls = 0;
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     //tracks player status. identity determines name and colour and can be changed
@@ -195,7 +196,11 @@ Player.prototype.checkCollisions = function (delta, world) {
     // Track which rooms the user has been to
     var i = Math.floor(this.position.x / world.gridunit);
     var j = Math.floor(this.position.y / world.gridunit);
-    this.visitedStructures = this.visitedStructures | world.tiles[i][j].owner_id;
+    if (world.tiles[i][j].type == 0) {
+        this.visitedRooms = this.visitedRooms | world.tiles[i][j].owner_id;
+    } else {
+        this.visitedHalls = this.visitedHalls | world.tiles[i][j].owner_id;
+    }
 
     //COLLISION TEST
     var x2 = this.position.x + this.velocity.x * delta;

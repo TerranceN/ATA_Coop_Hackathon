@@ -17,7 +17,8 @@ var World = function( numPlayers ) {
 	}
 	this.size = new Vector2( numPlayers * 12, numPlayers * 12 );
 	this.gridunit = 32;
-	this.lastStructureId = 1;
+	this.lastRoomId = 1;
+	this.lastHallId = 1;
 	this.numPlayers = numPlayers;
 
 	this.searchables = new Array();
@@ -30,7 +31,7 @@ var World = function( numPlayers ) {
 	for (var i = 0; i < this.size.x; ++i) {
 		this.tiles[i] = new Array(this.size.y);
 		for (var j = 0; j < this.size.y; ++j) {
-			this.tiles[i][j] = new Tile(2);
+			this.tiles[i][j] = new Tile(2, 0);
 		}
 	}
 
@@ -101,18 +102,24 @@ World.prototype.generate = function() {
 		if (!collides) {
 			this.rooms.push(room);
 			finalRooms++;
-			var structureId = this.getStructureId();
+			var structureId = this.getNextRoomId();
 			room.structureId = structureId;
+			var tileType = Math.floor(Math.random() * 2);
 			for (var j = 0; j < size.x; ++j) {
 				for (var k = 0; k < size.y; ++k) {
 					if (j == 0 || k == 0 || j == size.x - 1 || k == size.y - 1) { // NOTHING
 						//this.tiles[position.x + j][position.y + k] = new Tile(2);
 					//} else if (j == 1 || k == 1 || j == size.x - 2 || k == size.y - 2) { // WALL
-						this.tiles[position.x + j][position.y + k] = new Tile(1);
+						this.tiles[position.x + j][position.y + k] = new Tile(1, 0);
 						this.tiles[position.x + j][position.y + k].owner_id = structureId;	
 					} else { // FLOOR
-						this.tiles[position.x + j][position.y + k] = new Tile(0);	
-						this.tiles[position.x + j][position.y + k].owner_id = structureId;	
+						if (tileType == 0) {
+							this.tiles[position.x + j][position.y + k] = new Tile(0, 0);	
+							this.tiles[position.x + j][position.y + k].owner_id = structureId;	
+						} else {
+							this.tiles[position.x + j][position.y + k] = new Tile(3, 0);	
+							this.tiles[position.x + j][position.y + k].owner_id = structureId;			
+						}
 					}
 				}
 			}
@@ -176,35 +183,35 @@ World.prototype.connect = function(roomA, roomB) {
 	var yDir = Utility.sign(roomB.center.y - roomA.center.y);
 
 	var earlyBreak = false;
-	var structureId = this.getStructureId();
+	var structureId = this.getNextHallId();
 	for (var i = roomA.center.x; xDir != 0 && (xDir == -1 ? i >= roomB.center.x : i <= roomB.center.x); i += xDir) {
-		if (this.tiles[i][roomA.center.y].id != 0) {
-			this.tiles[i][roomA.center.y] = new Tile(0); // GROUND
+		if (this.tiles[i][roomA.center.y].id != 0 && this.tiles[i][roomA.center.y].id != 3) {
+			this.tiles[i][roomA.center.y] = new Tile(0, 1); // GROUND
 			this.tiles[i][roomA.center.y].owner_id = structureId;	
 		} //else if (this.tiles[i][roomA.center.y].owner_id != roomA.structureId) {
 			//earlyBreak = true;
 		//}
-		if (this.tiles[i][roomA.center.y - 1].id != 0) {
-			this.tiles[i][roomA.center.y - 1] = new Tile(0); // GROUND
+		if (this.tiles[i][roomA.center.y - 1].id != 0 && this.tiles[i][roomA.center.y - 1].id != 3) {
+			this.tiles[i][roomA.center.y - 1] = new Tile(0, 1); // GROUND
 			this.tiles[i][roomA.center.y - 1].owner_id = structureId;	
 		} //else if (this.tiles[i][roomA.center.y - 1].owner_id != roomA.structureId) {
 			//earlyBreak = true;
 		//}
 		if (this.tiles[i][roomA.center.y - 2].id == 2) {
 			if (this.tiles[i][roomA.center.y - 3].id == 0) {
-				this.tiles[i][roomA.center.y - 2] = new Tile(0); // GROUND
+				this.tiles[i][roomA.center.y - 2] = new Tile(0, 1); // GROUND
 				this.tiles[i][roomA.center.y - 2].owner_id = structureId; 
 			} else {
-				this.tiles[i][roomA.center.y - 2] = new Tile(1); // WALL
+				this.tiles[i][roomA.center.y - 2] = new Tile(1, 1); // WALL
 				this.tiles[i][roomA.center.y - 2].owner_id = structureId; 
 			}
 		}
 		if (this.tiles[i][roomA.center.y + 1].id == 2) {
 			if (this.tiles[i][roomA.center.y + 2].id == 0) {
-				this.tiles[i][roomA.center.y + 1] = new Tile(0); // GROUND	
+				this.tiles[i][roomA.center.y + 1] = new Tile(0, 1); // GROUND	
 				this.tiles[i][roomA.center.y + 1].owner_id = structureId; 	
 			} else {
-				this.tiles[i][roomA.center.y + 1] = new Tile(1); // WALL
+				this.tiles[i][roomA.center.y + 1] = new Tile(1, 1); // WALL
 				this.tiles[i][roomA.center.y + 1].owner_id = structureId; 
 			}
 		}
@@ -213,35 +220,35 @@ World.prototype.connect = function(roomA, roomB) {
 		}
 	}
 	if (!earlyBreak) {
-		structureId = this.getStructureId();
+		structureId = this.getNextHallId();
 		for (var i = roomA.center.y; yDir != 0 && (yDir == -1 ? i >= roomB.center.y : i <= roomB.center.y); i += yDir) {
-			if (this.tiles[roomB.center.x][i].id != 0) {
-				this.tiles[roomB.center.x][i] = new Tile(0); // GROUND	
+			if (this.tiles[roomB.center.x][i].id != 0 && this.tiles[roomB.center.x][i].id != 3) {
+				this.tiles[roomB.center.x][i] = new Tile(0, 1); // GROUND	
 				this.tiles[roomB.center.x][i].owner_id = structureId;	
 			} //else if (this.tiles[roomB.center.x][i].owner_id != roomA.structureId) {
 				//earlyBreak = true;
 			//}
-			if (this.tiles[roomB.center.x - 1][i].id != 0) {
-				this.tiles[roomB.center.x - 1][i] = new Tile(0); // GROUND	
+			if (this.tiles[roomB.center.x - 1][i].id != 0 && this.tiles[roomB.center.x - 1][i].id != 3) {
+				this.tiles[roomB.center.x - 1][i] = new Tile(0, 1); // GROUND	
 				this.tiles[roomB.center.x - 1][i].owner_id = structureId;	
 			} //else if (this.tiles[roomB.center.x - 1][i].owner_id != roomA.structureId) {
 				//earlyBreak = true;
 			//}
 			if (this.tiles[roomB.center.x - 2][i].id == 2) {
 				if (this.tiles[roomB.center.x - 3][i].id == 0) {
-					this.tiles[roomB.center.x - 2][i] = new Tile(0); // GROUND	
+					this.tiles[roomB.center.x - 2][i] = new Tile(0, 1); // GROUND	
 					this.tiles[roomB.center.x - 2][i].owner_id = structureId; 	
 				} else {
-					this.tiles[roomB.center.x - 2][i] = new Tile(1); // WALL
+					this.tiles[roomB.center.x - 2][i] = new Tile(1, 1); // WALL
 					this.tiles[roomB.center.x - 2][i].owner_id = structureId; 
 				}
 			}
 			if (this.tiles[roomB.center.x + 1][i].id == 2) {
 				if (this.tiles[roomB.center.x + 2][i].id == 0) {
-					this.tiles[roomB.center.x + 1][i] = new Tile(0); // GROUND		
+					this.tiles[roomB.center.x + 1][i] = new Tile(0, 1); // GROUND		
 					this.tiles[roomB.center.x + 1][i].owner_id = structureId; 
 				} else {
-					this.tiles[roomB.center.x + 1][i] = new Tile(1); // WALL
+					this.tiles[roomB.center.x + 1][i] = new Tile(1, 1); // WALL
 					this.tiles[roomB.center.x + 1][i].owner_id = structureId;
 				}
 			}
@@ -257,7 +264,7 @@ World.prototype.secondPass = function() {
 	for (var i = 1; i < this.size.x - 1; ++i) {
 		for (var j = 1; j < this.size.y - 1; ++j) {
 			// Make sure floor tiles have proper wall tiles
-			if (this.tiles[i][j].id == 0) {
+			if (this.tiles[i][j].id == 0 || this.tiles[i][j].id == 3) {
 				if (this.tiles[i - 1][j].id == 2) {
 					this.tiles[i - 1][j].id = 1;
 				}
@@ -339,9 +346,14 @@ World.prototype.getRandomSpawnPos = function() {
 	return new Vector2(room.center.x*this.gridunit, room.center.y*this.gridunit);
 }
 
-World.prototype.getStructureId = function() {
-	this.lastStructureId *= 2;
-	return this.lastStructureId / 2;
+World.prototype.getNextRoomId = function() {
+	this.lastRoomId *= 2;
+	return this.lastRoomId / 2;
+}
+
+World.prototype.getNextHallId = function() {
+	this.lastHallId *= 2;
+	return this.lastHallId / 2;
 }
 
 module.exports = World;
