@@ -7,6 +7,9 @@ var chatInputBox = document.getElementById("chatinput");
 Player.prototype.setKey = function (event, status) {
     var code = event.keyCode;
     var key = String.fromCharCode(code);
+    if (code == 188) {
+        key = ',';
+    }
     
     this.upPressed = this.upPressed === undefined ? 0 : this.upPressed;
     this.leftPressed = this.leftPressed === undefined ? 0 : this.leftPressed;
@@ -29,21 +32,25 @@ Player.prototype.setKey = function (event, status) {
             chatInputBox.focus();
         } else {
             switch (key) {
-                case 'W': {
+                case 'W': case ',': {
                     this.upPressed = status;
+                    this.downPressed = !this.upPressed && this.downPressed;
                 } break;
                 case 'A': {
                     this.leftPressed = status;
+                    this.rightPressed = !this.leftPressed && this.rightPressed;
                 } break;
-                case 'S': {
+                case 'S': case 'O': {
                     this.downPressed = status;
+                    this.upPressed = !this.downPressed && this.upPressed;
                 } break;
-                case 'D': {
+                case 'D': case 'E': {
                     this.rightPressed = status;
+                    this.leftPressed = !this.rightPressed && this.leftPressed;
                 } break;
             }
         }
-        if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
+        if (key in {'W':null, ',':null, 'A':null, 'S':null, 'O':null, 'D':null, 'E':null}) {
             this.controlForce = new Vector2(this.rightPressed - this.leftPressed, this.downPressed - this.upPressed).getNormalized();
             this.socket.emit('controlForce', this.controlForce);
         }

@@ -6,8 +6,8 @@ var Entity = require('./entity');
 var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
 var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
-var playerSpeed = 750;
-var playerDamping = 4;
+var playerSpeed = 1500;
+var playerDamping = 8;
 
 var hatSizes = [
     [28, 24],
@@ -51,6 +51,12 @@ var Player = function (id, socket, isServer) {
     }
 };
 
+Player.COLORS = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
+Player.NAMES = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
+var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
+Player.SPEED = 750;
+Player.DAMPING = 4;
+
 var sign = function (num) {
     if (num < 0) {
         return -1;
@@ -83,10 +89,10 @@ Player.prototype.setHatId = function(hatId) {
 
 
 Player.prototype.update = function (delta, players, io) {
-    this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(playerSpeed * delta));
+    this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
     this.position = this.position.add(this.velocity.scale(delta));
     this.checkCollisions(delta);
-    this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
+    this.velocity = this.velocity.add(this.velocity.scale(-delta * Player.DAMPING));
 
     if (this.attackFrame) {
         // Player just attacked. see if he hit anything.
@@ -159,41 +165,8 @@ Player.prototype.checkCollisions = function (delta) {
     }
 }
 
-Player.prototype.draw = function (canvas, ctx) {
-    var drawPos = this.getSmoothedPosition();
-    
-    // Render the player 
-    if (this.alive) { 
-        ctx.beginPath();
-        ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-        if (this.colliding) {
-            ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
-        } else {
-            ctx.fillStyle = playerColors[this.id % playerColors.length];
-        }
-        ctx.fill();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#000000';
-        ctx.stroke();
-
-        this.render(canvas, ctx);
-
-        ctx.save();
-        ctx.translate(drawPos.x, drawPos.y);
-        ctx.rotate(this.angle);
-        ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
-        this.hat.render(ctx);
-        ctx.restore();
-    } else {
-        ctx.beginPath();
-        ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-        ctx.fill();
-    }
-}
-
-Player.prototype.getIdentityInfo = function ( identity ){
-    return {'color': playerColors[ this.identity % playerColors.length ], 'name': playerNames[ this.identity % playerNames.length ]};
+Player.prototype.getIdentityInfo = function ( identity ) {
+    return {'color': Player.COLORS[ this.identity % playerColors.length ], 'name': Player.NAMES[ this.identity % playerNames.length ]};
 }
 
 Player.prototype.sendMessage = function (message) {
