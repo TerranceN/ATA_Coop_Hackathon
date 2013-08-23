@@ -11,10 +11,12 @@ var playerDamping = 8;
 
 var hatSizes = [
     [28, 24],
-    [24, 29],
-    [28, 31],
     [29, 24],
-    [28, 25]
+    [31, 28],
+    [29, 24],
+    [25, 28],
+    [26, 26],
+    [32, 20],
 ]
 
 var Player = function (id, socket, isServer) {
