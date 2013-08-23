@@ -109,6 +109,11 @@ var init = function init() {
                 chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
             });
 
+            socket.on('gamemessage', function (data) {
+                chatOutputBox.innerHTML = chatOutputBox.innerHTML + data['message'] + "<br>";
+                chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
+            });
+
             socket.on('userDisconnected', function (data) {
                 for (var i = players.length - 1; i >= 0; i--) {
                     if (players[i].id == data['id']) {

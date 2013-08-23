@@ -30,6 +30,8 @@ var Player = function (id, socket, isServer) {
     //tracks player status. identity determines name and colour and can be changed
     this.alive = true;
     this.identity = id;
+    this.role = 0;
+    this.nextGame = true;
 
     this.controlForce = new Vector2();
     this.upPressed = false;
