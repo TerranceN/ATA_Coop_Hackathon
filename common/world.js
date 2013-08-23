@@ -11,7 +11,7 @@ var wall = 1;
 var nothing = 2;
 
 var World = function( numPlayers ) {
-    this.lastObjectID = 0;
+    this.lastObjectId = 0;
 	if (typeof(numPlayers) == 'undefined') {
 		numPlayers = 5;
 	}
@@ -37,9 +37,9 @@ var World = function( numPlayers ) {
 	this.generate();
 }
 
-World.prototype.getNextObjectID = function () {
-    this.lastObjectID++;
-    return this.lastObjectID;
+World.prototype.getNextObjectId = function () {
+    this.lastObjectId++;
+    return this.lastObjectId;
 }
 
 World.prototype.getObjectById = function (objID) {
@@ -75,8 +75,8 @@ World.prototype.make = function(other) {
 }
 
 World.prototype.generate = function() {
-	var maxSize = 15;
-	var minSize = 10;
+	var maxSize = 13;
+	var minSize = 8;
 	var radius = 10;
 
 	var i = 0;
@@ -107,8 +107,8 @@ World.prototype.generate = function() {
 			for (var j = 0; j < size.x; ++j) {
 				for (var k = 0; k < size.y; ++k) {
 					if (j == 0 || k == 0 || j == size.x - 1 || k == size.y - 1) { // NOTHING
-						this.tiles[position.x + j][position.y + k] = new Tile(2);
-					} else if (j == 1 || k == 1 || j == size.x - 2 || k == size.y - 2) { // WALL
+						//this.tiles[position.x + j][position.y + k] = new Tile(2);
+					//} else if (j == 1 || k == 1 || j == size.x - 2 || k == size.y - 2) { // WALL
 						this.tiles[position.x + j][position.y + k] = new Tile(1);
 						this.tiles[position.x + j][position.y + k].owner_id = structureId;	
 					} else { // FLOOR
@@ -300,7 +300,8 @@ World.prototype.createObjects = function() {
 	console.log("create objects");
     world = this;
 	// Create rugs
-	var numRugs = 20;//Math.floor(Math.random() * 5 + 2);
+	var numRugs = 5;//Math.floor(Math.random() * 5 + 2);
+
 	for (var i = 0; i < numRugs; ++i) {
 		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
 		var pos = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
