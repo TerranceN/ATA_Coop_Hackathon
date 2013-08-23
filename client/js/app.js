@@ -133,6 +133,7 @@ var init = function init() {
         }
         if (typeof(data['world']) != 'undefined') {
             world = new World();
+            console.log(world);
             world.make(data['world']);
             userPlayer.world = world;
         }
@@ -222,7 +223,7 @@ function render() {
         entities[i].render(canvas, ctx);
     }
 
-    world.draw(canvas, ctx);
+    //world.draw(canvas, ctx);
 
     ctx.setTransform(1,0,0,1,0,0);
 
