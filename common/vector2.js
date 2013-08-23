@@ -30,7 +30,7 @@ Vector2.prototype.length = function() {
     return Math.sqrt(this.x*this.x + this.y*this.y);
 };
 
-Vector2.prototype.dot = function(other) {
+Vector2.prototype.inner = function(other) {
     return (this.x*other.x) + (this.y*other.y);
 };
 

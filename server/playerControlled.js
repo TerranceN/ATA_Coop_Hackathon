@@ -12,4 +12,8 @@ Player.prototype.createListeners = function (socket, isServer) {
         player.angle = data['angle'];
         player.attackFrame = true;
     });
+    
+    socket.on('action', function (data) {
+        player.actionQueue.push(data)
+    });
 };

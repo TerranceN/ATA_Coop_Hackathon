@@ -5,6 +5,7 @@ var Vector2 = require('../../common/vector2');
 var World = require("../../common/world");
 var Sprite = require("../../common/sprite");
 var Entity = require("../../common/entity");
+var Searchable = require("../../common/searchable");
 
 var userPlayer;
 var players = [];
@@ -138,7 +139,11 @@ var init = function init() {
             });
 
             socket.on('newEntity', function (data) {
-                entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
+                if (data['type'] == Searchable.CORPSE) {
+                    world.searchables.push(new Searchable(data['id'], new Vector2(data['position'].x, data['position'].y), data['angle'], Searchable.CORPSE));
+                } else {
+                    entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
+                }
             });
             main();
         }
@@ -301,6 +306,7 @@ resources.load([
     'client/img/wall.png',
     'client/img/attack.png',
     'client/img/rug.png',
+    'client/img/crate.png',
     'client/img/table.png'
 ]);
 resources.onReady(init);

@@ -4,12 +4,14 @@ var Room = require('./room');
 var Utility = require('./utility');
 var Tile = require('./tile');
 var Searchable = require('./searchable');
+var Item = require('./item');
 
 var ground = 0;
 var wall = 1;
 var nothing = 2;
 
 var World = function( numPlayers ) {
+    this.lastObjectId = 0;
 	if (typeof(numPlayers) == 'undefined') {
 		numPlayers = 5;
 	}
@@ -35,6 +37,24 @@ var World = function( numPlayers ) {
 	this.generate();
 }
 
+World.prototype.getNextObjectId = function () {
+    this.lastObjectId++;
+    return this.lastObjectId;
+}
+
+World.prototype.getObjectById = function (objID) {
+	for (var i = 0; i < this.searchables.length; i++) {
+		if (this.searchables[i].id == objID) {
+			return this.searchables[i];	
+		}
+	}
+	return null;
+}
+
+World.prototype.getSpawn = function(){
+	return Vector2(10,10);
+}
+
 World.prototype.make = function(other) {
 	this.size = other.size;
 	this.gridunit = other.gridunit;
@@ -43,15 +63,11 @@ World.prototype.make = function(other) {
 	this.height = other.height;
 	this.rooms = other.rooms;
 
-	console.log(this.searchables);
-
 	this.searchables = new Array(other.searchables.length);
 	for (var i = 0; i < this.searchables.length; i++) {
-		this.searchables[i] = new Searchable(Searchable.RUG);
-		this.searchables[i].position = new Vector2(other.searchables[i].position.x, other.searchables[i].position.y);
-		this.searchables[i].angle = other.searchables[i].angle;
+		this.searchables[i] = new Searchable(other.searchables[i].id, new Vector2(other.searchables[i].position.x, other.searchables[i].position.y), other.searchables[i].angle, other.searchables[i].type);
+		this.searchables[i].make(other.searchables[i]);
 	}	
-	console.log(this.searchables);
 
 	this.numPlayers = other.numPlayers;
 
@@ -281,22 +297,21 @@ World.prototype.secondPass = function() {
 }
 
 World.prototype.createObjects = function() {
+	console.log("create objects");
+    world = this;
 	// Create rugs
 	var numRugs = 5;//Math.floor(Math.random() * 5 + 2);
 
 	for (var i = 0; i < numRugs; ++i) {
-		var rug = new Searchable(1);
-
 		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
-		//this.toTileCoord(
-		//*this.gridunit - rug.size.x
-		rug.position = new Vector2(room.bounds.x + Math.floor(Math.random() * (room.bounds.width - Math.ceil(rug.size.x / this.gridunit))),
-			room.bounds.y + Math.floor(Math.random() * (room.bounds.height - Math.ceil(rug.size.y / this.gridunit))))
-			.scale(this.gridunit).add(rug.size.scale(1/2));
-		rug.angle = Math.random() * Math.PI / 9 - Math.PI / 18;
+		var pos = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
+			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit);
+
+		var rug = new Searchable(this.getNextObjectId(), pos, 0, Searchable.CRATE, 3000);
+		rug.position = rug.position.add(rug.size.scale(1/2));
+
 		this.searchables.push(rug);
 	}
-
 }
 
 World.prototype.toTileCoord = function(position) {
