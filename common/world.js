@@ -304,13 +304,22 @@ World.prototype.createObjects = function() {
 
 	for (var i = 0; i < numRugs; ++i) {
 		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
-		var pos = new Vector2(room.bounds.x + 1 + Math.floor(Math.random() * (room.bounds.width - 2)),
-			room.bounds.y + 1 + Math.floor(Math.random() * (room.bounds.height - 2))).scale(this.gridunit);
+		var searchable;
+		if (type == 0) {
+			searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), 0, Searchable.CRATE, 3000);
+		} else {
+			searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), 0, Searchable.TABLE, 3000);
+		//} else {
+			//searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), 0, Searchable.RUG, 3000);
+		}
 
-		var rug = new Searchable(this.getNextObjectId(), pos, 0, Searchable.CRATE, 3000);
-		rug.position = rug.position.add(rug.size.scale(1/2));
+		var pos = new Vector2(room.bounds.x + 1 + Math.floor(Math.random() * (room.bounds.width - 2 - Math.ceil(searchable.size.x / this.gridunit))),
+			room.bounds.y + 1 + Math.floor(Math.random() * (room.bounds.height - 2 - Math.ceil(searchable.size.y / this.gridunit)))).scale(this.gridunit);
 
-		this.searchables.push(rug);
+		var type = Math.floor(Math.random() * 3);
+		searchable.position = searchable.position.add(searchable.size.scale(1/2)).add(pos);
+
+		this.searchables.push(searchable);
 	}
 }
 
