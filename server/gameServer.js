@@ -11,7 +11,6 @@ var entities = [];
 var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
-var world = new World();
 var game;
 
 var getNextPlayerId = function () {
@@ -21,7 +20,7 @@ var getNextPlayerId = function () {
 
 var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
-    p.spawn(world.getRandomSpawnPos());
+    p.spawn(game.world.getRandomSpawnPos());
     players.push(p);
     return p;
 }
@@ -29,7 +28,7 @@ var newPlayer = function (socket) {
 var initConnectionHandler = function () {
     io.sockets.on('connection', function (socket) {
         var player = newPlayer(socket);
-        socket.emit('connectionAccepted', {'id': player.id, 'world':world});
+        socket.emit('connectionAccepted', {'id': player.id, 'world':game.world});
         socket.on('disconnect', function () {
             players.splice(players.indexOf(player), 1);
             io.sockets.emit('userDisconnected', {'id': player.id});
@@ -54,7 +53,7 @@ var initConnectionHandler = function () {
 
 var updatePlayers = function (dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, world, io);
+        players[i].update(dt, players, game.world, io);
     }
 
     var now = Date.now();

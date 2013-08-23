@@ -132,7 +132,6 @@ Player.prototype.getSmoothedPosition = function () {
 
 
 Player.prototype.checkCollisions = function (delta, world) {
-
     // Track which rooms the user has been to
     var i = Math.floor(this.position.x / world.gridunit);
     var j = Math.floor(this.position.y / world.gridunit);

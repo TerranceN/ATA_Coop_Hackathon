@@ -121,6 +121,12 @@ var init = function init() {
                 chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
             });
 
+            socket.on('newgame', function (data) {
+                if (typeof(data['world']) != 'undefined') {
+                    console.log(data['world']);
+                    world.make(data['world']);
+                }
+            });
 
 
             socket.on('userDisconnected', function (data) {
@@ -248,6 +254,10 @@ function render() {
             } else if (world.tiles[i][j].id == -1) { // DEBUG
                 color = '#FFFFFF';
             }
+            if ( world.tiles[i][j] == 'undefined'){
+                console.log(world);
+            }
+
             if (color != 'none' && (userPlayer.visitedStructures & world.tiles[i][j].owner_id)) {
                 ctx.fillStyle = color;
                 ctx.fillRect(i*minimapTileSize, j*minimapTileSize, minimapTileSize, minimapTileSize);

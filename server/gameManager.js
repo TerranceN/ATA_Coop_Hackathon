@@ -14,7 +14,8 @@ var gameManager = function (IOin) {
 
 gameManager.prototype.GAMEOVER = 0;
 gameManager.prototype.WAITINGFORPLAYERS = 1;
-gameManager.prototype.RUNNING = 2;
+gameManager.prototype.PREPARINGTOSTART = 2;
+gameManager.prototype.RUNNING = 3;
 
 gameManager.prototype.newGame = function ( players ){
     //count up number of players who want to play
@@ -26,42 +27,48 @@ gameManager.prototype.newGame = function ( players ){
     }
     
     if (activeplayers.length > minPlayers){
-        //generate world and inform players
-        console.log("generating world");
-        this.world = new World(activeplayers.length);
-        io.sockets.emit('newgame', {'world': this.world});
-        io.sockets.emit('gamemessage', {'message': 'New game started!'});
+        if (this.state == this.PREPARINGTOSTART){
+            //generate world and inform players
+            console.log("generating world");
+            this.world = new World(activeplayers.length);
+            io.sockets.emit('newgame', {'world': this.world});
+            io.sockets.emit('gamemessage', {'message': 'New game started!'});
 
-        //assign identities to players
-        startidentity = 0;
-        for (var x = 0; x < players.length; x++){
-            players[x].alive = true;
-            players[x].socket.leave('spectator');
-            players[x].position = this.world.getRandomSpawnPos();
-            players[x].identity = startidentity;
-            players[x].role = 0;
-            info = players[x].getIdentityInfo();
-            players[x].socket.emit('gamemessage', {'message': "You are <span style='color:" + info['color'] + ";'>" + info['name'] + "</span>"});
-            startidentity++;
-        }
-
-        //choose players to be assassins
-        var tries = 0;
-        var assassinCount = 0;
-        numAssassin = Math.floor(activeplayers.length * 0.2);
-        if(numAssassin < 1){ numAssassin = 1;}
-        while (assassinCount < numAssassin && tries < 100){
-            picked = Math.floor(Math.random() * activeplayers.length);
-            if (activeplayers[picked].role != 1){
-                activeplayers[picked].role = 1;
-                activeplayers[picked].socket.emit('gamemessage', {'message': "You are an assassin this round!"});
-                assassinCount++;
+            //assign identities to players
+            startidentity = 0;
+            for (var x = 0; x < players.length; x++){
+                players[x].alive = true;
+                players[x].socket.leave('spectator');
+                players[x].position = this.world.getRandomSpawnPos();
+                players[x].identity = startidentity;
+                players[x].role = 0;
+                info = players[x].getIdentityInfo();
+                players[x].socket.emit('gamemessage', {'message': "You are <span style='color:" + info['color'] + ";'>" + info['name'] + "</span>"});
+                startidentity++;
             }
-            tries++;
-        }
 
-        this.state = this.RUNNING;
-        this.gameStart = Date.now();
+            //choose players to be assassins
+            var tries = 0;
+            var assassinCount = 0;
+            numAssassin = Math.floor(activeplayers.length * 0.2);
+            if(numAssassin < 1){ numAssassin = 1;}
+            while (assassinCount < numAssassin && tries < 100){
+                picked = Math.floor(Math.random() * activeplayers.length);
+                if (activeplayers[picked].role != 1){
+                    activeplayers[picked].role = 1;
+                    activeplayers[picked].socket.emit('gamemessage', {'message': "You are an assassin this round!"});
+                    assassinCount++;
+                }
+                tries++;
+            }
+
+            this.state = this.RUNNING;
+            this.gameStart = Date.now();
+        } else {
+            io.sockets.emit('gamemessage', {'message': 'Preparing to start new game...'});
+            this.state = this.PREPARINGTOSTART;
+            this.lastActive = Date.now();
+        }
     } else {
     this.state = this.WAITINGFORPLAYERS;
     this.lastActive = Date.now();
