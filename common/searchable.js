@@ -49,7 +49,7 @@ Searchable.TABLE = TABLE;
 Searchable.prototype = new Entity();        // Set prototype to Person's
 Searchable.prototype.constructor = Searchable;
 
-Searchable.protoype.beginInteraction = function (player, time) {
+Searchable.prototype.beginInteraction = function (player, time) {
     /* Overload this method to do something useful
      * @param player: a Player object - the player who seeks to interact with us
      * @param time: a timestamp indicating when the player seeks to interact
