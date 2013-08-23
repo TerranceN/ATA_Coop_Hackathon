@@ -2,7 +2,7 @@ var Player = require("../common/player");
 require("./playerControlled");
 var Vector2 = require("../common/vector2")
 var World = require("../common/world");
-var GameManager = require("/gameManager");
+var GameManager = require("./gameManager");
 var ioModule = require("socket.io");
 var io;
 
@@ -12,7 +12,7 @@ var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
 var world = new World();
-var game = new GameManager();
+var game;
 
 var getNextPlayerId = function () {
     lastPlayerId += 1;
@@ -20,11 +20,9 @@ var getNextPlayerId = function () {
 }
 
 var newPlayer = function (socket) {
-    var p = new Player(getNextPlayerId(), socket, true);
-    p.world = world;
+    var p = new Player(getNextPlayerId(), socket, true, io);
     p.spawn(world.getRandomSpawnPos());
     players.push(p);
-    p.world = world;
     return p;
 }
 
@@ -56,7 +54,7 @@ var initConnectionHandler = function () {
 
 var updatePlayers = function (dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, io);
+        players[i].update(dt, players, world, io);
     }
 
     var now = Date.now();
@@ -89,9 +87,9 @@ var gameLoop = function (lastTime) {
     dt = Math.min(dt, 1000/60);
 
     //check game state conditions
-    game.checkState();
+    game.checkState( players );
     if (game.state != game.RUNNING && now - game.lastActive > 3000 ){
-        game.newGame();
+        game.newGame( players );
     }
 
 
@@ -107,6 +105,7 @@ var gameLoop = function (lastTime) {
 module.exports.init = function (app) {
     io = ioModule.listen(app);
     io.set('log level', 1); // reduce logging
+    game = new GameManager(io);
     initConnectionHandler();
     gameLoop(Date.now());
 }
