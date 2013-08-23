@@ -22,6 +22,7 @@ var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
     p.spawn(game.world.getRandomSpawnPos());
     players.push(p);
+    console.log(p);
     return p;
 }
 
@@ -69,13 +70,26 @@ var updatePlayers = function (dt) {
 var sendPlayerUpdates = function () {
     var playerData = [];
     var time = Date.now();
+    var player;
+    var items, item;
     for (var i = 0; i < players.length; i++) {
+        player = players[i];
+        items = []
+        for (var i = 0; i < player.items.length; ++i) {
+            items.push([]);
+            for (var j = 0; j < player.items[i].length; ++j) {
+                item = player.items[i][j];
+                items[i].push({"id":item.id, "type":item.type});
+            }
+        }
         playerData.push({
-                'id': players[i].id,
-                'position': players[i].position,
-                'velocity': players[i].velocity,
-                'angle': players[i].angle,
-                'alive': players[i].alive});
+                'id': player.id,
+                'position': player.position,
+                'velocity': player.velocity,
+                'angle': player.angle,
+                'alive': player.alive,
+                'interacting': player.interacting,
+                'items': items});
     }
 
     io.sockets.emit('playerUpdate', {
