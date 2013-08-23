@@ -279,6 +279,17 @@ function render() {
     ctx.fillStyle = "#222222";
     ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
 
+    var key = new Sprite('client/img/key.png', [0, 0], [25, 64], 1, [0]);
+
+    ctx.save();
+    ctx.translate(50, canvas.height - 50);
+    ctx.translate(-key.size[0]/2 - 5, -key.size[1]/2);
+    for (var i = 0; i < userPlayer.items[0].length; ++i) {
+        key.render(ctx);
+        ctx.translate(50, 0);
+    }
+    ctx.restore();
+
 };
 
 function sendMessage(){
@@ -312,6 +323,7 @@ resources.load([
     'client/img/attack.png',
     'client/img/rug.png',
     'client/img/crate.png',
-    'client/img/table.png'
+    'client/img/table.png',
+    'client/img/key.png'
 ]);
 resources.onReady(init);
