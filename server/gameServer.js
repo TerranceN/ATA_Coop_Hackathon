@@ -1,4 +1,5 @@
 var Player = require("../common/player");
+require("./playerControlled");
 var World = require("../common/world");
 var ioModule = require("socket.io");
 var io;
