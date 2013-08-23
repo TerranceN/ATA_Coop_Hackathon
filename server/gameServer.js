@@ -28,8 +28,19 @@ var initConnectionHandler = function () {
             io.sockets.emit('userDisconnected', {'id': player.id});
         });
 
-        socket.on('chat', function(data){
-            io.sockets.emit('chat', data);
+        socket.on('chat', function(message){
+            if (player.alive){
+                info = player.getIdentityInfo();
+                message['name'] = info['name'];
+                message['color'] = info['color'];
+                console.log(message);
+                io.sockets.emit('chat', message);
+            } else {
+                message['name'] = "Spectator" + player.id;
+                message['color'] = ""
+                console.log(message);
+                io.sockets.emit('chat', message);
+            }
         });
     });
 }

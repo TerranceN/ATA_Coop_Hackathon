@@ -9,6 +9,8 @@ var players = [];
 //chat parameters
 var isTyping = false;
 var chatInputBox = document.getElementById("chatinput");
+var chatOutputBox = document.getElementById("chatoutput");
+var chatSend = document.getElementById("chatsend");
 
 // A cross-browser requestAnimationFrame
 // See https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
@@ -31,7 +33,6 @@ target.parentNode.replaceChild(canvas, target);
 canvas.id = 'canvas';
 canvas.width = 800;
 canvas.height = 600;
-document.body.appendChild(canvas);
 
 // The main game loop
 var lastTime;
@@ -47,6 +48,7 @@ function main() {
 };
 
 var init = function init() {
+    chatSend.onclick = function (){sendMessage();};
     lastTime = Date.now();
     var socket = io.connect(document.URL);
     socket.on('connectionAccepted', function(data) {
@@ -84,6 +86,11 @@ var init = function init() {
                         newPlayer.velocity.y = thisPlayerUpdate['velocity'].y;
                     }
                 }
+            });
+
+            socket.on('chat', function (data) {
+                chatOutputBox.innerHTML = chatOutputBox.innerHTML + "<span style='color:" + data['color'] + ";'>" + data['name'] + "</span>: " + data['message'] + "<br>";
+                chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
             });
 
             socket.on('userDisconnected', function (data) {
@@ -179,6 +186,14 @@ function render() {
     }
 
     ctx.setTransform(1,0,0,1,0,0);
+};
+
+function sendMessage(){
+    if (chatInputBox.value != ""){
+        userPlayer.sendMessage(chatInputBox.value);
+        chatInputBox.value = "";
+    }
+    return false;
 };
 
 resources.load([

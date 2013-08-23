@@ -50,12 +50,17 @@ canvas {
 
 #chatoutput {
     background: white;
-    overflow: scroll;
+    overflow: auto;
     width: 200px;
-    height: 450px;
+    height: 540px;
 }
 
 #chatinput {
+    width: 200px;
+    height: 30px;
+}
+
+#chatsend {
     width: 200px;
     height: 30px;
 }

@@ -4,6 +4,7 @@ var Sprite = require('./sprite');
 var Entity = require('./entity');
 
 var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
+var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
 var playerSpeed = 30;
 var playerDamping = 6;
@@ -16,8 +17,11 @@ var Player = function (id, socket, isServer) {
     this.targetOffset = new Vector2();
     this.targetOffsetCount = 0;
     this.size = 15;
-    this.alive = 0;
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0, 1]);
+
+    //tracks player status. identity determines name and colour and can be changed
+    this.alive = true;
+    this.identity = id;
 
     this.controlsDirection = new Vector2();
     this.upPressed = false;
@@ -189,7 +193,7 @@ Player.prototype.checkCollisions = function () {
     if(this.position.y > world.height - this.size) {
         this.position.y = world.height - this.size;
     }
-} 
+}
 
 Player.prototype.draw = function (canvas, ctx) {
     /*if (this.targetOffsetCount < 6) {
@@ -203,11 +207,19 @@ Player.prototype.draw = function (canvas, ctx) {
     // Render the player 
     ctx.beginPath();
     ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = playerColors[this.id % playerColors.length];//"rgba(192, 255, 192, 1.0)";
+    ctx.fillStyle = playerColors[this.identity % playerColors.length];//"rgba(192, 255, 192, 1.0)";
     ctx.fill();
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#000000';
     ctx.stroke();
+}
+
+Player.prototype.getIdentityInfo = function ( identity ){
+    return {'color': playerColors[ this.identity % playerColors.length ], 'name': playerNames[ this.identity % playerNames.length ]};
+}
+
+Player.prototype.sendMessage = function (message) {
+    this.socket.emit('chat', {'message': message});
 }
 
 module.exports = Player;
