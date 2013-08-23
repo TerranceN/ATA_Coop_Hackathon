@@ -112,7 +112,7 @@
             alert("Could not initialise shaders");
         }
 
-        gl.useProgram(shaderProgram);
+        setShader(shaderProgram);
 
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
         gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
@@ -170,8 +170,8 @@
 
 
     function setMatrixUniforms() {
-        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+        gl.uniformMatrix4fv(gl.getUniformLocation(currentShader, "uPMatrix"), false, pMatrix);
+        gl.uniformMatrix4fv(gl.getUniformLocation(currentShader, "uMVMatrix"), false, mvMatrix);
     }
 
 
@@ -262,9 +262,7 @@
         fullscreenVertexIndexBuffer.numItems = 6;
     }
 
-    var fbo;
-    var renderTexture;
-    var renderBuffer;
+    var fbo1;
 
     function nextPOT(x) {
         var tmp = 2;
@@ -278,13 +276,13 @@
     var nextPOTWidth;
     var nextPOTHeight;
 
-    function initFBOs() {
-        fbo = gl.createFramebuffer();
+    function newFBO() {
+        var fbo = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
         fbo.width = nextPOTWidth;
         fbo.height = nextPOTHeight;
 
-        renderTexture = gl.createTexture();
+        var renderTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, renderTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -295,16 +293,24 @@
 
         gl.generateMipmap(gl.TEXTURE_2D);
 
-        renderbuffer = gl.createRenderbuffer();
+        var renderbuffer = gl.createRenderbuffer();
         gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
         gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, fbo.width, fbo.height);
 
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, renderTexture, 0);
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
 
+        fbo.texture = renderTexture;
+        fbo.renderbuffer = renderbuffer;
+        fbo.vertexPositionBuffer = fullscreenVertexPositionBuffer;
+        fbo.vertexTextureCoordBuffer = fullscreenVertexTextureCoordBuffer;
+        fbo.vertexIndexBuffer = fullscreenVertexIndexBuffer;
+
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.bindRenderbuffer(gl.RENDERBUFFER, null);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        return fbo;
     }
 
     function drawNeHeLogo() {
@@ -315,50 +321,50 @@
         mat4.identity(mvMatrix);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aVertexPosition"), squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexTextureCoordBuffer);
-        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, squareVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aTextureCoord"), squareVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, neheTexture);
-        gl.uniform1i(shaderProgram.samplerUniform, 0);
+        gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, squareVertexIndexBuffer);
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, squareVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     }
 
-    function drawFBO() {
+    function drawFBO(fbo) {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clearColor(1.0, 0.0, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         mat4.identity(mvMatrix);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, fullscreenVertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, fullscreenVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexPositionBuffer);
+        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aVertexPosition"), fbo.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, fullscreenVertexTextureCoordBuffer);
-        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, fullscreenVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexTextureCoordBuffer);
+        gl.vertexAttribPointer(gl.getAttribLocation(currentShader, "aTextureCoord"), fbo.vertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, renderTexture);
-        gl.uniform1i(shaderProgram.samplerUniform, 0);
+        gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+        gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fullscreenVertexIndexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fbo.vertexIndexBuffer);
         setMatrixUniforms();
-        gl.drawElements(gl.TRIANGLES, fullscreenVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(gl.TRIANGLES, fbo.vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     }
 
     function drawScene() {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
 
         drawNeHeLogo();
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-        drawFBO();
+        drawFBO(fbo1);
     }
 
 
@@ -379,13 +385,17 @@
         animate();
     }
 
+    function setShader(shader) {
+        gl.useProgram(shader);
+        currentShader = shader;
+    }
 
     function webGLStart() {
         var canvas = document.getElementById("lesson05-canvas");
         initGL(canvas);
         initShaders();
         initBuffers();
-        initFBOs();
+        fbo1 = newFBO();
         initTexture();
 
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
