@@ -14,7 +14,9 @@ var Player = function (id, socket, isServer, io) {
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
     this.size = 15;
-    this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0, 1]);
+    this.hat = new Sprite('client/img/hats/hat' + id % 3 + '.png', [0, 0], [24, 24], [0]);
+    this.colliding = false
+    this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     this.controlsDirection = new Vector2();
     this.upPressed = false;
@@ -141,7 +143,7 @@ Player.prototype.update = function (delta) {
         this.velocity = this.velocity.add(controlsDirection.getNormalized().scale(playerSpeed));
     }
     this.position = this.position.add(this.velocity.scale(delta));
-    this.checkCollisions();
+    this.checkCollisions(delta);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
 
     if (this.targetOffsetCount < 6) {
@@ -157,7 +159,7 @@ Player.prototype.getSmoothedPosition = function () {
     }
 }
 
-Player.prototype.checkCollisions = function () {
+Player.prototype.checkCollisions = function (delta) {
 
     // Check collision with edge of map
     if(this.position.x < this.size) {
@@ -173,6 +175,21 @@ Player.prototype.checkCollisions = function () {
     if(this.position.y > world.height - this.size) {
         this.position.y = world.height - this.size;
     }
+
+    var minTileX = Math.max(0, Math.floor((this.position.x - this.size) / world.gridunit));
+    var maxTileX = Math.min(world.size.x - 1, Math.floor((this.position.x + this.size) / world.gridunit));
+    var minTileY = Math.max(0, Math.floor((this.position.y - this.size) / world.gridunit));
+    var maxTileY = Math.min(world.size.y - 1, Math.floor((this.position.y + this.size) / world.gridunit));
+
+    this.colliding = false;
+    // Check collision with objects in map
+    for (var i = minTileX; i <= maxTileX; ++i) {
+        for (var j = minTileY; j <= maxTileY; ++j) {
+            if (world.tiles[i][j] == 1) {
+                this.colliding = true;
+            }
+        }
+    }
 } 
 
 Player.prototype.draw = function (canvas, ctx) {
@@ -181,7 +198,11 @@ Player.prototype.draw = function (canvas, ctx) {
     // Render the player 
     ctx.beginPath();
     ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = playerColors[this.id % playerColors.length];//"rgba(192, 255, 192, 1.0)";
+    if (this.colliding) {
+        ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
+    } else {
+        ctx.fillStyle = playerColors[this.id % playerColors.length];
+    }
     ctx.fill();
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#000000';

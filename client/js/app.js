@@ -149,7 +149,7 @@ function render() {
     //ctx.translate(cameraOffset.x, cameraOffset.y);
 
     // Fill the screen gray (the out of bounds area)
-    ctx.fillStyle = '#cccccc';
+    ctx.fillStyle = '#222222';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Fill the area of the world that is in bounds as white
@@ -159,25 +159,25 @@ function render() {
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
-    //// Draw a grid
-    ctx.setTransform(1,0,0,1,0,0);
-    //var gridunit = 20;
-    //ctx.beginPath();
-    //for (var x = cameraOffset.x % gridunit; x <= canvas.width; x += gridunit) {
-    //    ctx.moveTo(x, 0);
-    //    ctx.lineTo(x, canvas.height);
-    //}
-    //for (var y = cameraOffset.y % gridunit; y <= canvas.height; y += gridunit) {
-    //    ctx.moveTo(0, y);
-    //    ctx.lineTo(canvas.width, y);
-    //}
-    //ctx.lineWidth = 1;
-    //ctx.strokeStyle = '#999999';
-    //ctx.stroke();
-    
-
+    for (var i = 0; i < world.size.x; ++i) {
+        for (var j = 0; j < world.size.y; ++j) {
+            var tile_url = 'client/img/grass.png';
+            if (world.tiles[i][j] == 0) { // ground
+                var tile_url = 'client/img/road.png';
+            } else if (world.tiles[i][j] == 1) { // wall
+                var tile_url = 'client/img/wall.png';
+            } else if (world.tiles[i][j] == -1) { // DEBUG
+                var tile_url = 'none';
+            }
+            if (tile_url != 'none') {
+                ctx.drawImage(resources.get(tile_url),
+                  i*world.gridunit, j*world.gridunit,
+                  world.gridunit, world.gridunit);
+            }
+        }
+    }
     // outline the edge of the world]
-    ctx.translate(cameraOffset.x, cameraOffset.y);
+    //ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
     ctx.rect(0, 0, world.width, world.height);
     ctx.lineWidth = 3;
@@ -198,6 +198,15 @@ resources.load([
     'client/img/sprites.png',
     'client/img/terrain.png',
     'client/img/player1.png',
+    'client/img/attack.png',
+    'client/img/hats/hat1.png',
+    'client/img/hats/hat2.png',
+    'client/img/hats/hat3.png',
+    'client/img/hats/hat4.png',
+    'client/img/road.png',
+    'client/img/water.png',
+    'client/img/grass.png',
+    'client/img/wall.png',
     'client/img/attack.png'
 ]);
 resources.onReady(init);
