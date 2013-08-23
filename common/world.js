@@ -171,7 +171,7 @@ World.prototype.connectRooms = function() {
 				roomB = this.rooms[Math.floor(Math.random() * this.rooms.length)];	
 			}
 			this.connect(roomA, roomB);
-			poop++;
+			poop += 2;
 		}
 
 		unconnectedRooms.splice(0, 1);
