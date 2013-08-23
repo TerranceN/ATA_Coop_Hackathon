@@ -46,6 +46,8 @@ World.prototype.make = function(other) {
 	this.width = other.width;
 	this.height = other.height;
 	this.rooms = other.rooms;
+	//this.searchables = other.searchables;
+	//this.numPlayers = other.numPlayers;
 
 	this.tiles = other.tiles;
 }

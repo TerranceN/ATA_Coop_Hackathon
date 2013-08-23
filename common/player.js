@@ -182,7 +182,7 @@ Player.prototype.checkCollisions = function (delta) {
     }
 
     //horizontal collision test
-    if ((newgx != gx) && (this.world.tiles[newgx][gy] == 1)) {
+    if ((newgx != gx) && (this.world.tiles[newgx][gy].id == 1)) {
         if (newx > x2) {
             x2 = newgx * gridunit - UR;
         } else {
@@ -193,7 +193,7 @@ Player.prototype.checkCollisions = function (delta) {
     }
 
     //vertical collision test
-    if ((newgy != gy) && (this.world.tiles[gx][newgy] == 1)) {
+    if ((newgy != gy) && (this.world.tiles[gx][newgy].id == 1)) {
         if (newy > y2) {
             y2 = newgy * gridunit - UR;
         } else {
@@ -203,7 +203,7 @@ Player.prototype.checkCollisions = function (delta) {
         this.collisionTile = new Vector2(gx, newgy);
     }
     //corner collision possible
-    if (newgx != gx && newgy != gy && (this.world.tiles[newgx][newgy] == 1)) {
+    if (newgx != gx && newgy != gy && (this.world.tiles[newgx][newgy].id == 1)) {
         //want to use circle hitbox not square
         var ox = 0;
         var oy = 0;
@@ -250,19 +250,27 @@ Player.prototype.checkCollisions = function (delta) {
     }
 
     this.position.x = Math.max(UR, Math.min(x2, this.world.width - UR) );
-    if (this.position.x == UR) this.velocity.x = Math.max(this.velocity.x, 0);
-    if (this.position.x == this.world.width-UR) this.velocity.x = Math.min(this.velocity.x, 0);
+    if (this.position.x == UR) { 
+        this.velocity.x = Math.max(this.velocity.x, 0);
+    }
+    if (this.position.x == this.world.width-UR) {
+        this.velocity.x = Math.min(this.velocity.x, 0);
+    }
     this.position.y = y2; //Math.max(UR, Math.min(y2, this.world.height - UR) );
-    if (this.position.y == UR) this.velocity.y = Math.max(this.velocity.y, 0);
-    if (this.position.y == this.world.height - UR) this.velocity.y = Math.min(this.velocity.y, 0);
-}
+    if (this.position.y == UR) {
+        this.velocity.y = Math.max(this.velocity.y, 0);
+    }
+    if (this.position.y == this.world.height - UR) {
+      this.velocity.y = Math.min(this.velocity.y, 0);  
+    } 
+};
 
 Player.prototype.getIdentityInfo = function ( identity ) {
     return {'color': Player.COLORS[ this.identity % playerColors.length ], 'name': Player.NAMES[ this.identity % playerNames.length ]};
-}
+};
 
 Player.prototype.sendMessage = function (message) {
     this.socket.emit('chat', {'message': message});
-}
+};
 
 module.exports = Player;
