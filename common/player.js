@@ -204,12 +204,12 @@ Player.prototype.checkCollisions = function (delta) {
         //want to use circle hitbox not square
         var ox = 0;
         var oy = 0;
-        if (newx > x2) {
+        if (newgx > gx) {
             ox = newgx * gridunit - x2;
         } else {
             ox = x2 - (newgx + 1) * gridunit;
         }
-        if (newy > y2) {
+        if (newgy > gy) {
             oy = newgy * gridunit - y2;
         } else {
             oy = y2 - (newgy + 1) * gridunit;
@@ -218,21 +218,26 @@ Player.prototype.checkCollisions = function (delta) {
         var xt = Math.sqrt(UR * UR - oy * oy);
         var yt = Math.sqrt(UR * UR - ox * ox);
         //x large enough
-        var xHit = ((newx > x2) && (x2 + xt > newgx * gridunit))
-            || ((newx < x2) && (x2 - xt < (newgx + 1) * gridunit));
-        var yHit = ((newy > y2) && (y2 + yt > newgy * gridunit))
-            || ((newy < y2) && (y2 - yt < (newgy + 1) * gridunit));
+        var xHit = ((newgx > gx) && (x2 + xt > newgx * gridunit))
+            || ((newgx < gx) && (x2 - xt < (newgx + 1) * gridunit));
+        var yHit = ((newgy > gy) && (gy + yt > newgy * gridunit))
+            || ((newgy < gy) && (y2 - yt < (newgy + 1) * gridunit));
         if (xHit && yHit) {
             //collided.
-            if (newx > x2) {
-                x2 = x2 + ox - UR;
+            var offset = new Vector2(ox, oy);
+            //move the player away from the point of collision until he is unit radius away
+            offset = offset.scaleTo(UR - offset.length());
+            ox = Math.abs(offset.x);
+            oy = Math.abs(offset.y);
+            if (newgx > gx) {
+                x2 = x2 - ox;// - UR;
             } else {
-                x2 = x2 - ox + UR;
+                x2 = x2 + ox;// + UR;
             }
-            if (newy > y2) {
-                y2 = y2 + oy - UR;
+            if (newgy > gy) {
+                y2 = y2 - oy;// - UR;
             } else {
-                y2 = y2 - oy + UR;
+                y2 = y2 + oy;// + UR;
             }
             //adjust velocity according to distance from point of collision to unit
             //point of collision is x2 +- ox I think
