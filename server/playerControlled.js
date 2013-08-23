@@ -14,6 +14,7 @@ Player.prototype.createListeners = function (socket, isServer) {
     });
     
     socket.on('action', function (data) {
-        player.actionQueue.push(data)
+        player.angle = data['angle'];
+        player.actionQueue.push(data['status'])
     });
 };

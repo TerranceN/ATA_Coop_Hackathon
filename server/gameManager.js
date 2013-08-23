@@ -27,7 +27,7 @@ gameManager.prototype.newGame = function ( players ){
             activeplayers.push(players[x]);
         }
     }
-    console.log(activeplayers.length);
+    //console.log(activeplayers.length);
     
     if (activeplayers.length > minPlayers){
         if (this.state == this.PREPARINGTOSTART){
@@ -84,7 +84,7 @@ gameManager.prototype.newGame = function ( players ){
 
 gameManager.prototype.checkState = function ( players ) {
     info = this.userCount( players );
-    console.log( this.state, info );
+    //console.log( this.state, info );
     if (this.state == this.RUNNING) {
         if (info['all'] == 0) {
             this.endGame("Game Over: Doesn't seem like anyone wants to play.");
