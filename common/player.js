@@ -15,7 +15,6 @@ var hatSizes = [
 ]
 
 var Player = function (id, socket, isServer) {
-    console.log('player');
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
@@ -112,7 +111,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
             }
             var interactive = world.getObjectById(this.interacting.interactiveId);
             if (!action || Date.now() - this.interacting.startTime >= interactive.duration) {
-                this.stopInteracting(interactive);
+                this.stopInteracting(world, interactive);
             }
         }
         if (this.actionQueue.length && !this.interacting) {
@@ -333,9 +332,9 @@ Player.prototype.checkCollisions = function (delta, world) {
     } 
 };
 
-Player.prototype.stopInteracting = function (interactive) {
+Player.prototype.stopInteracting = function (world, interactive) {
     if (this.interacting) {
-        interactive = interactive === undefined ? this.world.getObjectById(this.interacting.interactiveId) : interactive;
+        interactive = interactive === undefined ? world.getObjectById(this.interacting.interactiveId) : interactive;
         interactive.endInteraction(this, Date.now())
         this.interacting = false;
     }
@@ -348,6 +347,10 @@ Player.prototype.getIdentityInfo = function () {
 
 Player.prototype.sendMessage = function (message) {
     this.socket.emit('chat', {'message': message});
+};
+
+Player.prototype.toggleNextGame = function () {
+    this.socket.emit('toggleNextGame', {});
 };
 
 module.exports = Player;

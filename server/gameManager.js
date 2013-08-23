@@ -32,7 +32,6 @@ gameManager.prototype.newGame = function ( players ){
             activeplayers.push(players[x]);
         }
     }
-    //console.log(activeplayers.length);
     
     if (activeplayers.length > minPlayers){
         if (this.state == this.PREPARINGTOSTART){
