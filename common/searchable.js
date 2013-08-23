@@ -87,14 +87,6 @@ function generateOnPlayerSuccess (objectiveID) {
     }
     return onPlayerSuccess;
 }
-Searchable.prototype.make = function(other) {
-	this.id = other.id;
-	this.position = new Vector2(other.position.x, other.position.y);
-	this.angle = other.angle;
-	this.type = other.type;
-	this.duration = other.duration;
-}
-
 Searchable.RUG = RUG;
 Searchable.CRATE = CRATE;
 Searchable.CORPSE = CORPSE;
@@ -102,6 +94,14 @@ Searchable.TABLE = TABLE;
 
 Searchable.prototype = new Entity();        // Set prototype to Person's
 Searchable.prototype.constructor = Searchable;
+
+Searchable.prototype.make = function(other) {
+	this.id = other.id;
+	this.position = new Vector2(other.position.x, other.position.y);
+	this.angle = other.angle;
+	this.type = other.type;
+	this.duration = other.duration;
+}
 
 Searchable.prototype.beginInteraction = function (player, time) {
     /* @param player: a Player object - the player who seeks to interact with us
