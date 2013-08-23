@@ -48,12 +48,15 @@ var initConnectionHandler = function () {
                 io.sockets.in('spectator').emit('chat', message);
             }
         });
+        socket.on('newgamerecieved', function(data){
+            player.gameID = data['gameID'];
+        })
     });
 }
 
 var updatePlayers = function (dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, game.world, io);
+        players[i].update(dt, players, game.world, game.state, io);
     }
 
     var now = Date.now();
@@ -77,7 +80,8 @@ var sendPlayerUpdates = function () {
 
     io.sockets.emit('playerUpdate', {
             'timestamp': time,
-            'players': playerData});
+            'players': playerData,
+            'gameState': game.state});
 }
 
 var gameLoop = function (lastTime) {
@@ -89,8 +93,8 @@ var gameLoop = function (lastTime) {
     game.checkState( players );
     if (game.state != game.RUNNING && now - game.lastActive > 3000 ){
         game.newGame( players );
+        console.log("calling newgame");
     }
-
 
     updatePlayers(dt);
 

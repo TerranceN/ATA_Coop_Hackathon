@@ -11,6 +11,7 @@ var players = [];
 var entities = [];
 var world = new World();
 var visionRange = 300;
+var gameState = 0;
 
 //chat parameters
 var isTyping = false;
@@ -72,6 +73,7 @@ var init = function init() {
                 var timestamp = data['timestamp'];
 
                 if (timestamp > newestMessageTime) {
+                    gameState = data['gameState'];
                     var playerUpdates = data['players'];
 
                     for (var i = 0; i < playerUpdates.length; i++) {
@@ -125,6 +127,8 @@ var init = function init() {
                 if (typeof(data['world']) != 'undefined') {
                     console.log(data['world']);
                     world.make(data['world']);
+                    userPlayer.gameID = data['gameID'];
+                    socket.emit('newgamerecieved', {'gameID': userPlayer.gameID});
                 }
             });
 
@@ -158,7 +162,7 @@ function update(dt) {
 
 function updateEntities(dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, world);
+        players[i].update(dt, players, world, gameState);
     }
     for (var i = 0; i < entities.length; i++) {
         entities[i].updateAnimation(dt);
