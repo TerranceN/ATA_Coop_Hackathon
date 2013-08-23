@@ -1,4 +1,5 @@
 var Player = require('../../common/player');
+require("./playerController");
 var Vector2 = require('../../common/vector2');
 var World = require("../../common/world");
 var Sprite = require("../../common/sprite");

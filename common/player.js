@@ -31,7 +31,7 @@ var Player = function (id, socket, isServer) {
     this.alive = true;
     this.identity = id;
 
-    this.controlsDirection = new Vector2();
+    this.controlForce = new Vector2();
     this.upPressed = false;
     this.downPressed = false;
     this.leftPressed = false;
@@ -79,97 +79,9 @@ Player.prototype.setHatId = function(hatId) {
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
 }
 
-Player.prototype.setKey = function (event, status) {
-    var code = event.keyCode;
-    var key = String.fromCharCode(code);
-
-    switch (key) {
-        case 'W': {
-            this.upPressed = status;
-        } break;
-        case 'A': {
-            this.leftPressed = status;
-        } break;
-        case 'S': {
-            this.downPressed = status;
-        } break;
-        case 'D': {
-            this.rightPressed = status;
-        } break;
-        case 'Q': {
-            // Attack button was previously released and is now pressed.
-            if (status && !this.attackPressed && this.alive) {
-                this.socket.emit("attack", {angle: this.angle});
-            }
-            this.attackPressed = status;
-        }
-    }
-
-    if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
-        this.socket.emit('setKey', {key: key, status: status});
-    }
-}
-
-Player.prototype.createListeners = function (socket, isServer) {
-    var player = this;
-    if (isServer) {
-        socket.on('setKey', function (data) {
-            if (data['key'] == 'W') {
-                player.upPressed = data['status'];
-            } else if (data['key'] == 'S') {
-                player.downPressed = data['status'];
-            } else if (data['key'] == 'A') {
-                player.leftPressed = data['status'];
-            } else if (data['key'] == 'D') {
-                player.rightPressed = data['status'];
-            }
-        });
-        socket.on('attack', function (data) {
-            player.angle = data['angle'];
-            player.attackFrame = true;
-        });
-
-    } else {
-        document.addEventListener('keydown', function(e) {
-            player.setKey(e, true);
-        });
-
-        document.addEventListener('keyup', function(e) {
-            player.setKey(e, false);
-        });
-
-        window.addEventListener('blur', function() {
-            player.upPressed = false;
-            player.downPressed = false;
-            player.leftPressed = false;
-            player.rightPressed = false;
-        });
-
-        document.addEventListener('mousemove', function (evt) {
-            if (evt.target == canvas) {
-                if (evt.offsetX) {
-                    mouse = new Vector2(evt.offsetX, evt.offsetY);
-                }
-                else if (evt.layerX) {
-                    mouse = new Vector2(evt.layerX, evt.layerY);
-                }
-
-                var mouseDiff = mouse.add(new Vector2(-canvas.width/2, -canvas.height/2));
-                player.angle = Math.atan2(mouseDiff.y, mouseDiff.x);
-            }
-        }, false);
-    }
-};
 
 Player.prototype.update = function (delta, players, io) {
-    if (typeof(this.socket) != 'undefined') {
-        var controlsDirection = new Vector2();
-        controlsDirection.y -= this.upPressed ? 1 : 0;
-        controlsDirection.y += this.downPressed ? 1 : 0;
-        controlsDirection.x -= this.leftPressed ? 1 : 0;
-        controlsDirection.x += this.rightPressed ? 1 : 0;
-        this.velocity = this.velocity.add(controlsDirection.getNormalized().scale(playerSpeed * delta));
-    }
+    this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(playerSpeed * delta));
     this.position = this.position.add(this.velocity.scale(delta));
     this.checkCollisions(delta);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
@@ -248,29 +160,33 @@ Player.prototype.draw = function (canvas, ctx) {
     var drawPos = this.getSmoothedPosition();
     
     // Render the player 
-    ctx.beginPath();
-    ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    if (this.colliding && this.alive) {
-        ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
-        ctx.fill();
-    } else if (this.alive) {
-        ctx.fillStyle = playerColors[this.id % playerColors.length];
-        ctx.fill();
-    }
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#000000';
-    ctx.stroke();
-
-    this.render(canvas, ctx);
-
-    ctx.save();
-    ctx.translate(drawPos.x, drawPos.y);
-    ctx.rotate(this.angle);
-    ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
     if (this.alive) { 
+        ctx.beginPath();
+        ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
+        if (this.colliding) {
+            ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
+        } else {
+            ctx.fillStyle = playerColors[this.id % playerColors.length];
+        }
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#000000';
+        ctx.stroke();
+
+        this.render(canvas, ctx);
+
+        ctx.save();
+        ctx.translate(drawPos.x, drawPos.y);
+        ctx.rotate(this.angle);
+        ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
         this.hat.render(ctx);
+        ctx.restore();
+    } else {
+        ctx.beginPath();
+        ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+        ctx.fill();
     }
-    ctx.restore();
 }
 
 Player.prototype.getIdentityInfo = function ( identity ){
