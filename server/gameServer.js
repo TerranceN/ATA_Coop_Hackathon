@@ -8,7 +8,6 @@ var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
 
-
 var getNextPlayerId = function () {
     lastPlayerId += 1;
     return lastPlayerId;

@@ -140,22 +140,37 @@ function render() {
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
+    for (var i = 0; i < world.size.x; ++i) {
+        for (var j = 0; j < world.size.y; ++j) {
+            if (world.tiles[i][j] == 0) { // ground
+                ctx.fillStyle = '#dddddd';
+                ctx.fillRect(i*world.gridunit, j*world.gridunit, world.gridunit, world.gridunit);
+            } else if (world.tiles[i][j] == 1) { // wall
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(i*world.gridunit, j*world.gridunit, world.gridunit, world.gridunit);
+            } else if (world.tiles[i][j] == -1) { // DEBUG
+                ctx.fillStyle = '#FCD116';
+                ctx.fillRect(i*world.gridunit, j*world.gridunit, world.gridunit, world.gridunit);            
+            }
+        }
+    }
+
+    ctx.fillStyle = '#ffffff';
+
     // Draw a grid
     ctx.setTransform(1,0,0,1,0,0);
-    var gridunit = 20;
     ctx.beginPath();
-    for (var x = screenOffset.x % gridunit; x <= canvas.width; x += gridunit) {
+    for (var x = screenOffset.x % world.gridunit; x <= canvas.width; x += world.gridunit) {
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
     }
-    for (var y = screenOffset.y % gridunit; y <= canvas.height; y += gridunit) {
+    for (var y = screenOffset.y % world.gridunit; y <= canvas.height; y += world.gridunit) {
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
     }
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#999999';
     ctx.stroke();
-    
 
     // outline the edge of the world]
     ctx.translate(screenOffset.x, screenOffset.y);
