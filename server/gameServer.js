@@ -29,6 +29,7 @@ var initConnectionHandler = function () {
     io.sockets.on('connection', function (socket) {
         var player = newPlayer(socket);
         socket.emit('connectionAccepted', {'id': player.id, 'world':game.world});
+        socket.join('spectator');
         socket.on('disconnect', function () {
             players.splice(players.indexOf(player), 1);
             io.sockets.emit('userDisconnected', {'id': player.id});
@@ -50,7 +51,11 @@ var initConnectionHandler = function () {
         });
         socket.on('newgamerecieved', function(data){
             player.gameID = data['gameID'];
-        })
+        });
+        socket.on('toggleNextGame', function(data){
+            player.nextGame = !player.nextGame;
+            player.socket.emit('nextGameStatus', {'value': player.nextGame});
+        });
     });
 }
 

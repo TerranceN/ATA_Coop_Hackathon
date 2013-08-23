@@ -13,11 +13,14 @@ var entities = [];
 var world = new World();
 var gameState = 0;
 
+var runGame = true;
+
 //chat parameters
 var isTyping = false;
 var chatInputBox = document.getElementById("chatinput");
 var chatOutputBox = document.getElementById("chatoutput");
 var chatSend = document.getElementById("chatsend");
+var toggleNextGame = document.getElementById("toggleNextGame");
 
 // A cross-browser requestAnimationFrame
 // See https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
@@ -49,15 +52,17 @@ function main() {
     var dt = (now - lastTime) / 1000.0;
 
     dt = Math.min(dt, 1000/60);
-    update(dt);
-    render();
-
+    if (runGame) {
+        update(dt);
+        render();
+    }
     lastTime = now;
     requestAnimFrame(main);
 };
 
 var init = function init() {
     chatSend.onclick = function (){sendMessage();};
+    toggleNextGame.onclick = function (){togglePlayerNextGame();};
     lastTime = Date.now();
     var socket = io.connect(document.URL);
     var newestMessageTime = 0;
@@ -125,13 +130,20 @@ var init = function init() {
 
             socket.on('newgame', function (data) {
                 if (typeof(data['world']) != 'undefined') {
-                    console.log(data['world']);
                     world.make(data['world']);
                     userPlayer.gameID = data['gameID'];
                     socket.emit('newgamerecieved', {'gameID': userPlayer.gameID});
                 }
             });
 
+            socket.on('nextGameStatus', function (data) {
+                userPlayer.nextGame = data['value'];
+                if ( userPlayer.nextGame ) {
+                    toggleNextGame.innerHTML = "I want to play. (Click to toggle)"
+                } else {
+                    toggleNextGame.innerHTML = "Sitting out next round. (Click to toggle)"
+                }
+            });
 
             socket.on('userDisconnected', function (data) {
                 for (var i = players.length - 1; i >= 0; i--) {
@@ -148,6 +160,12 @@ var init = function init() {
                     entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
                 }
             });
+
+            socket.on('disconnect', function (){
+                document.getElementById("instructions").innerHTML = "<span style='color:AA0114;'>Connection to Server Lost. Please Refresh Page!</span>";
+                runGame = false;
+            });
+
             main();
         }
     });
@@ -289,6 +307,10 @@ function sendMessage(){
         }
     }
     return false;
+};
+
+function togglePlayerNextGame(){
+    userPlayer.toggleNextGame();
 };
 
 resources.load([

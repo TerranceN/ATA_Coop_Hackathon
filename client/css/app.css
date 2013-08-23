@@ -45,7 +45,11 @@ canvas {
 #chatbox {
     float: right;
     width: 200px;
-    height: 480px;
+}
+
+#toggleNextGame {
+    width: 200px;
+    height: 30px;
 }
 
 #chatoutput {

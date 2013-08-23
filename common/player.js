@@ -15,7 +15,6 @@ var hatSizes = [
 ]
 
 var Player = function (id, socket, isServer) {
-    console.log('player');
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
@@ -330,6 +329,10 @@ Player.prototype.getIdentityInfo = function () {
 
 Player.prototype.sendMessage = function (message) {
     this.socket.emit('chat', {'message': message});
+};
+
+Player.prototype.toggleNextGame = function () {
+    this.socket.emit('toggleNextGame', {});
 };
 
 module.exports = Player;
