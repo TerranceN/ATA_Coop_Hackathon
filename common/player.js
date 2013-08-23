@@ -106,7 +106,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
         while (action && this.actionQueue.length) {
             action = this.actionQueue.shift();
         }
-        var interactive = this.world.getObjectById(this.interacting.interactiveId);
+        var interactive = world.getObjectById(this.interacting.interactiveId);
         if (!action || Date.now() - this.interacting.startTime >= interactive.duration) {
             now = Date.now();
             interactive.endInteraction(this, now);
@@ -119,7 +119,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
             action = action || this.actionQueue.shift()
         }
         if (action) {
-            var interactives = this.world.searchables;
+            var interactives = world.searchables;
             var validInteractives = [];
             var interactive;
             var posDiff, angleDiff, score;
@@ -127,7 +127,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
                 interactive = interactives[i];
                 posDiff = interactive.position.add(this.position.scale(-1))
                 angleDiff = Math.atan2(posDiff.y, posDiff.x);
-                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 6 && posDiff.length() < 30) {
+                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 4 && posDiff.length() < 40) {
                     validInteractives.push({key:posDiff.length(), obj:interactive});
                 }
             }

@@ -11,7 +11,6 @@ var userPlayer;
 var players = [];
 var entities = [];
 var world = new World();
-var visionRange = 300;
 var gameState = 0;
 
 //chat parameters
@@ -232,11 +231,12 @@ function render() {
         entities[i].render(canvas, ctx);
     }
     for (var i = 0; i < players.length; i++) {
-        players[i].draw(canvas, ctx);
+        players[i].draw(canvas, ctx, world);
     }
 
     ctx.setTransform(1,0,0,1,0,0);
 
+    var visionRange = userPlayer.interacting ? 140 : 300;
     //draw max vision range effect
     ctx.beginPath();
     ctx.rect(0, 0, canvas.width, canvas.height);
