@@ -42,6 +42,15 @@ World.prototype.getNextObjectID = function () {
     return this.lastObjectID;
 }
 
+World.prototype.getObjectById = function (objID) {
+	for (var i = 0; i < this.searchables.length; i++) {
+		if (this.searchables[i].id == objID) {
+			return this.searchables[i];	
+		}
+	}
+	return null;
+}
+
 World.prototype.getSpawn = function(){
 	return Vector2(10,10);
 }
@@ -54,11 +63,10 @@ World.prototype.make = function(other) {
 	this.height = other.height;
 	this.rooms = other.rooms;
 
-	console.log(this.searchables);
-
 	this.searchables = new Array(other.searchables.length);
 	for (var i = 0; i < this.searchables.length; i++) {
-		this.searchables[i] = new Searchable(other.searchables[i].id, other.searchables[i].position, other.searchables[i].angle, other.searchables[i].type);
+		this.searchables[i] = new Searchable(other.searchables[i].id, new Vector2(other.searchables[i].position.x, other.searchables[i].position.y), other.searchables[i].angle, other.searchables[i].type);
+		this.searchables[i].make(other.searchables[i]);
 	}	
 
 	this.numPlayers = other.numPlayers;
@@ -291,37 +299,6 @@ World.prototype.secondPass = function() {
 World.prototype.createObjects = function() {
 	console.log("create objects");
     world = this;
-    var searchingBeginInteraction = function (player, time) {
-        return false;
-    };
-    var idleBeginInteraction = function (player, time) {
-        if (this.allowPLayerInteraction(player)) {
-            this.interactions.push({player:player, startTime:time});
-            this.beginInteraction = searchingBeginInteraction;
-            this.endInteraction = searchingEndInteraction;
-        }
-        return true;
-    }
-    var searchingEndInteraction = function (player, time) {
-        if (player.id != this.interactions[0].player.id) {
-            return;
-        }
-        interaction = interactions.shift();
-        if (time - interaction.startTime >= this.duration) {
-            this.onPlayerSuccess(interaction.player);
-        }
-        this.beginInteraction = idleBeginInteraction;
-        this.endInteraction = idleEndInteraction;
-    }
-    var idleEndInteraction = function (player, time) {}
-    var allowPlayerInteraction = function (player) {
-        return !player.interacting && player.items[Item.TYPES.objective].length < Item.MAX_OWN[Item.TYPES.objective];
-    }
-    function generateOnPlayerSuccess (objectiveID) {
-        var onPlayerSuccess = function (player) {
-            player.items[Item.TYPES.objective].push(new Item(objectiveID, Item.TYPES.objective, null));
-        }
-    }
 	// Create rugs
 	var numRugs = 20;//Math.floor(Math.random() * 5 + 2);
 	for (var i = 0; i < numRugs; ++i) {
@@ -329,17 +306,11 @@ World.prototype.createObjects = function() {
 		var pos = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
 			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit);
 
-		var rug = new Searchable(this.getNextObjectID(), pos, 0, Searchable.RUG, 3000);
+		var rug = new Searchable(this.getNextObjectID(), pos, 0, Searchable.CRATE, 3000);
 		rug.position = rug.position.add(rug.size.scale(1/2));
 
-        rug.beginInteraction = idleBeginInteraction;
-        rug.endInteraction = idleEndInteraction;
-        rug.allowPlayerInteraction = allowPlayerInteraction;
-        rug.onPlayerSuccess = generateOnPlayerSuccess(i);
-        
 		this.searchables.push(rug);
 	}
-
 }
 
 World.prototype.toTileCoord = function(position) {
