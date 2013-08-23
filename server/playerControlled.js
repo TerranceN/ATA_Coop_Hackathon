@@ -1,7 +1,6 @@
 var Entity = require('../common/entity');
 var Player = require('../common/player');
 var Vector2 = require('../common/vector2');
-var world = require("../common/world");
 
 Player.prototype.createListeners = function (socket, isServer) {
     var player = this;
@@ -12,5 +11,9 @@ Player.prototype.createListeners = function (socket, isServer) {
     socket.on('attack', function (data) {
         player.angle = data['angle'];
         player.attackFrame = true;
+    });
+    
+    socket.on('action', function (data) {
+        player.actionQueue.push(data)
     });
 };

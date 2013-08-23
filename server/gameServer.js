@@ -1,6 +1,8 @@
 var Player = require("../common/player");
 require("./playerControlled");
+var Vector2 = require("../common/vector2")
 var World = require("../common/world");
+var GameManager = require("./gameManager");
 var ioModule = require("socket.io");
 var io;
 
@@ -9,7 +11,7 @@ var entities = [];
 var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
-var world = new World();
+var game;
 
 var getNextPlayerId = function () {
     lastPlayerId += 1;
@@ -18,6 +20,7 @@ var getNextPlayerId = function () {
 
 var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
+    p.spawn(game.world.getRandomSpawnPos());
     players.push(p);
     return p;
 }
@@ -25,7 +28,7 @@ var newPlayer = function (socket) {
 var initConnectionHandler = function () {
     io.sockets.on('connection', function (socket) {
         var player = newPlayer(socket);
-        socket.emit('connectionAccepted', {'id': player.id, 'world':world});
+        socket.emit('connectionAccepted', {'id': player.id, 'world':game.world});
         socket.on('disconnect', function () {
             players.splice(players.indexOf(player), 1);
             io.sockets.emit('userDisconnected', {'id': player.id});
@@ -40,17 +43,20 @@ var initConnectionHandler = function () {
                 io.sockets.emit('chat', message);
             } else {
                 message['name'] = "Spectator" + player.id;
-                message['color'] = ""
+                message['color'] = "";
                 console.log(message);
                 io.sockets.in('spectator').emit('chat', message);
             }
         });
+        socket.on('newgamerecieved', function(data){
+            player.gameID = data['gameID'];
+        })
     });
 }
 
 var updatePlayers = function (dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, io);
+        players[i].update(dt, players, game.world, game.state, io);
     }
 
     var now = Date.now();
@@ -63,23 +69,44 @@ var updatePlayers = function (dt) {
 var sendPlayerUpdates = function () {
     var playerData = [];
     var time = Date.now();
+    var player;
+    var items, item;
     for (var i = 0; i < players.length; i++) {
+        player = players[i];
+        items = []
+        for (var k = 0; k < player.items.length; ++k) {
+            items.push([]);
+            for (var j = 0; j < player.items[k].length; ++j) {
+                item = player.items[k][j];
+                items[k].push({"id":item.id, "type":item.type});
+            }
+        }
         playerData.push({
-                'id': players[i].id,
-                'position': players[i].position,
-                'velocity': players[i].velocity,
-                'angle': players[i].angle,
-                'alive': players[i].alive});
+                'id': player.id,
+                'position': player.position,
+                'velocity': player.velocity,
+                'angle': player.angle,
+                'alive': player.alive,
+                'interacting': player.interacting,
+                'items': items});
     }
 
     io.sockets.emit('playerUpdate', {
             'timestamp': time,
-            'players': playerData});
+            'players': playerData,
+            'gameState': game.state});
 }
 
 var gameLoop = function (lastTime) {
     var now = Date.now();
     var dt = (now - lastTime) / 1000;
+    dt = Math.min(dt, 1000/60);
+
+    //check game state conditions
+    game.checkState( players );
+    if (game.state != game.RUNNING && now - game.lastActive > 3000 ){
+        game.newGame( players );
+    }
 
     updatePlayers(dt);
 
@@ -93,6 +120,7 @@ var gameLoop = function (lastTime) {
 module.exports.init = function (app) {
     io = ioModule.listen(app);
     io.set('log level', 1); // reduce logging
+    game = new GameManager(io);
     initConnectionHandler();
     gameLoop(Date.now());
 }

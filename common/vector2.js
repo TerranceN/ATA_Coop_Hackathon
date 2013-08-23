@@ -12,7 +12,7 @@ var Vector2 = function (x, y) {
 
 Vector2.prototype.copy = function () {
     return new Vector2(this.x, this.y);
-}
+};
 
 Vector2.prototype.add = function (other) {
     return new Vector2(this.x + other.x, this.y + other.y);
@@ -22,9 +22,17 @@ Vector2.prototype.scale = function (factor) {
     return new Vector2(this.x * factor, this.y * factor);
 };
 
+Vector2.prototype.scaleTo = function (newLength) {
+    return this.getNormalized().scale(newLength);
+};
+
 Vector2.prototype.length = function() {
     return Math.sqrt(this.x*this.x + this.y*this.y);
-}
+};
+
+Vector2.prototype.inner = function(other) {
+    return (this.x*other.x) + (this.y*other.y);
+};
 
 Vector2.prototype.getNormalized = function () {
     var len = this.length();
@@ -33,6 +41,6 @@ Vector2.prototype.getNormalized = function () {
     } else {
         return new Vector2();
     }
-}
+};
 
 module.exports = Vector2;
