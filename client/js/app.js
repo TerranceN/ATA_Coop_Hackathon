@@ -95,7 +95,7 @@ var init = function init() {
             });
 
             socket.on('newEntity', function (data) {
-                entities.push(new Entity(data['position'], data['angle'], data['type']));
+                entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
             });
             main();
         }
@@ -172,7 +172,6 @@ function render() {
 
     for (var i = 0; i < players.length; i++) {
         players[i].draw(canvas, ctx);
-        players[i].render(canvas, ctx);
     }
     for (var i = 0; i < entities.length; i++) {
         entities[i].render(canvas, ctx);
