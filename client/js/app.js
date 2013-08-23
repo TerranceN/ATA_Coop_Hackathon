@@ -44,40 +44,47 @@ function main() {
 var init = function init() {
     lastTime = Date.now();
     var socket = io.connect(document.URL);
+    var newestMessageTime = 0;
     socket.on('connectionAccepted', function(data) {
         if (typeof(data['id']) != 'undefined') {
             userPlayer = new Player(data['id'], socket);
             players.push(userPlayer);
 
             socket.on('playerUpdate', function(data) {
-                var playerUpdates = data['players'];
+                var timestamp = data['timestamp'];
 
-                for (var i = 0; i < playerUpdates.length; i++) {
-                    var thisPlayerUpdate = playerUpdates[i];
-                    var id = thisPlayerUpdate['id'];
+                if (timestamp > newestMessageTime) {
+                    var playerUpdates = data['players'];
 
-                    var foundPlayer = false;
-                    for (var j = 0; j < players.length; j++) {
-                        if (id == players[j].id) {
-                            var oldPosition = players[j].position.copy();
-                            players[j].position.x = thisPlayerUpdate['position'].x;
-                            players[j].position.y = thisPlayerUpdate['position'].y;
-                            players[j].velocity.x = thisPlayerUpdate['velocity'].x;
-                            players[j].velocity.y = thisPlayerUpdate['velocity'].y;
-                            players[j].targetOffset = oldPosition.add(players[j].position.scale(-1))
-                            players[j].targetOffsetCount = 0;
-                            foundPlayer = true;
+                    for (var i = 0; i < playerUpdates.length; i++) {
+                        var thisPlayerUpdate = playerUpdates[i];
+                        var id = thisPlayerUpdate['id'];
+
+                        var foundPlayer = false;
+                        for (var j = 0; j < players.length; j++) {
+                            if (id == players[j].id) {
+                                var oldPosition = players[j].position.copy();
+                                players[j].position.x = thisPlayerUpdate['position'].x;
+                                players[j].position.y = thisPlayerUpdate['position'].y;
+                                players[j].velocity.x = thisPlayerUpdate['velocity'].x;
+                                players[j].velocity.y = thisPlayerUpdate['velocity'].y;
+                                players[j].targetOffset = oldPosition.add(players[j].position.scale(-1))
+                                players[j].targetOffsetCount = 0;
+                                foundPlayer = true;
+                            }
+                        }
+
+                        if (!foundPlayer) {
+                            var newPlayer = new Player(id);
+                            players.push(newPlayer);
+                            newPlayer.position.x = thisPlayerUpdate['position'].x;
+                            newPlayer.position.y = thisPlayerUpdate['position'].y;
+                            newPlayer.velocity.x = thisPlayerUpdate['velocity'].x;
+                            newPlayer.velocity.y = thisPlayerUpdate['velocity'].y;
                         }
                     }
-
-                    if (!foundPlayer) {
-                        var newPlayer = new Player(id);
-                        players.push(newPlayer);
-                        newPlayer.position.x = thisPlayerUpdate['position'].x;
-                        newPlayer.position.y = thisPlayerUpdate['position'].y;
-                        newPlayer.velocity.x = thisPlayerUpdate['velocity'].x;
-                        newPlayer.velocity.y = thisPlayerUpdate['velocity'].y;
-                    }
+                } else {
+                    console.log("Skipping update since " + timestamp + " >= " + newestMessageTime);
                 }
             });
 
