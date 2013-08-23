@@ -1,4 +1,4 @@
-
+var Item = require("../common/item");
 var World = require("../common/world");
 minPlayers = 2;
 var io;
@@ -19,6 +19,11 @@ gameManager.prototype.PREPARINGTOSTART = 2;
 gameManager.prototype.STARTING = 3;
 gameManager.prototype.RUNNING = 4;
 
+gameManager.prototype.ROLES = {
+    innocent:0,
+    assassin:1
+}
+
 gameManager.prototype.newGame = function ( players ){
     //count up number of players who want to play
     activeplayers = [];
@@ -27,7 +32,7 @@ gameManager.prototype.newGame = function ( players ){
             activeplayers.push(players[x]);
         }
     }
-    console.log(activeplayers.length);
+    //console.log(activeplayers.length);
     
     if (activeplayers.length > minPlayers){
         if (this.state == this.PREPARINGTOSTART){
@@ -47,6 +52,8 @@ gameManager.prototype.newGame = function ( players ){
                 players[x].identity = startidentity;
                 players[x].role = 0;
                 players[x].visitedStructures = 0;
+                //reset items for the player
+                players[x].items = [[],[],[],[]];
                 info = players[x].getIdentityInfo();
                 console.log("init player ", players[x].id);
                 players[x].socket.emit('gamemessage', {'message': "You are <span style='color:" + info['color'] + ";'>" + info['name'] + "</span>"});
@@ -84,7 +91,7 @@ gameManager.prototype.newGame = function ( players ){
 
 gameManager.prototype.checkState = function ( players ) {
     info = this.userCount( players );
-    console.log( this.state, info );
+    //console.log( this.state, info );
     if (this.state == this.RUNNING) {
         if (info['all'] == 0) {
             this.endGame("Game Over: Doesn't seem like anyone wants to play.");
@@ -92,8 +99,11 @@ gameManager.prototype.checkState = function ( players ) {
         if (info['player'] - info['assassin'] <= 0){
             this.endGame("Game Over: The assassins have killed everyone else.");
         }
-        if (info['assassin'] == 0){
+        /*if (info['assassin'] == 0){
             this.endGame("Game Over: The assassins are dead. Everyone is safe.");
+        }*/
+        if (this.objectiveCondition(players)) {
+            this.endGame("Game Over: the \"good guys\" have fulfilled their objective!");
         }
     } else if (this.state == this.STARTING) {
         if (info['ready'] == info['player']) {
@@ -124,6 +134,22 @@ gameManager.prototype.endGame = function ( message ) {
     this.lastActive = Date.now();
     this.state = this.GAMEOVER;
     io.sockets.emit('gamemessage', {'message': message});
+}
+
+gameManager.prototype.objectiveCondition = function (players) {
+    var objectives = 0;
+    var player;
+    for (var i = 0; i < players.length; ++i) {
+        player = players[i];
+        if (player.alive && this.world.activeObjective(player)) {
+            objectives += player.items[Item.TYPES.objective].length;
+        }
+    }
+    if (objectives >= 5) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 module.exports = gameManager;

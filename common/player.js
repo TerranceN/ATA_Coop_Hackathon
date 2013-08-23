@@ -34,7 +34,7 @@ var Player = function (id, socket, isServer) {
     this.gameID = 0;
 
     this.hatId = this.identity % hatSizes.length;
-    this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
+    this.hat = new Sprite('client/img/hats/hat' + (this.hatId + 1) + '.png', [0, 0], hatSizes[this.hatId], 1, [0]);
 
     this.controlForce = new Vector2();
     this.upPressed = false;
@@ -43,6 +43,7 @@ var Player = function (id, socket, isServer) {
     this.rightPressed = false;
     this.attackPressed = false;
     this.attackFrame = false; //set to true whe nthe user attacks to indicate it needs to do a hitTest
+    this.spacePressed = false;
     this.actionQueue = [];
     this.interacting = false;
     this.items = [[], [], [], []];
@@ -92,6 +93,7 @@ Player.prototype.spawn = function(position) {
 }
 
 Player.prototype.update = function (delta, players, world, gameState, io) {
+    var isServer = io;
     this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
     if (gameState == 4 || gameState == 1 || gameState == 0) {
         this.checkCollisions(delta, world);
@@ -100,62 +102,63 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
     }
     this.velocity = this.velocity.add(this.velocity.scale(-delta * Player.DAMPING));
     
-    var action;
-    var now;
-    if (this.interacting) {
-        action = true;
-        while (action && this.actionQueue.length) {
-            action = this.actionQueue.shift();
+    //if (true) {
+        var action;
+        var now;
+        if (this.interacting) {
+            action = true;
+            while (action && this.actionQueue.length) {
+                action = this.actionQueue.shift();
+            }
+            var interactive = world.getObjectById(this.interacting.interactiveId);
+            if (!action || Date.now() - this.interacting.startTime >= interactive.duration) {
+                this.stopInteracting(interactive);
+            }
         }
-        var interactive = world.getObjectById(this.interacting.interactiveId);
-        if (!action || Date.now() - this.interacting.startTime >= interactive.duration) {
-            now = Date.now();
-            interactive.endInteraction(this, now);
-            this.interacting = false;
-        }
-    }
-    if (this.actionQueue.length && !this.interacting) {
-        action = false;
-        while (this.actionQueue.length) {
-            action = action || this.actionQueue.shift()
-        }
-        if (action) {
-            var interactives = world.searchables;
-            var validInteractives = [];
-            var interactive;
-            var posDiff, angleDiff, score;
-            for (var i = 0; i < interactives.length; ++i) {
-                interactive = interactives[i];
-                posDiff = interactive.position.add(this.position.scale(-1))
-                angleDiff = Math.atan2(posDiff.y, posDiff.x);
-                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 4 && posDiff.length() < 40) {
-                    validInteractives.push({key:posDiff.length(), obj:interactive});
+        if (this.actionQueue.length && !this.interacting) {
+            action = false;
+            while (this.actionQueue.length) {
+                action = action || this.actionQueue.shift()
+            }
+            if (action) {
+                var interactives = world.searchables;
+                var validInteractives = [];
+                var interactive;
+                var posDiff, angleDiff, score;
+                for (var i = 0; i < interactives.length; ++i) {
+                    interactive = interactives[i];
+                    posDiff = interactive.position.add(this.position.scale(-1))
+                    angleDiff = Math.atan2(posDiff.y, posDiff.x);
+                    if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 4 && posDiff.length() < 40) {
+                        validInteractives.push({key:posDiff.length(), obj:interactive});
+                    }
                 }
-            }
-            var idx, minIdx, minKey;
-            minKey = Infinity;
-            for (idx = 0; idx < validInteractives.length; ++idx) {
-                if (validInteractives[idx].key < minKey) {
-                    minKey = validInteractives[idx].key;
-                    minIdx = idx;
+                var idx, minIdx, minKey;
+                minKey = Infinity;
+                for (idx = 0; idx < validInteractives.length; ++idx) {
+                    if (validInteractives[idx].key < minKey) {
+                        minKey = validInteractives[idx].key;
+                        minIdx = idx;
+                    }
                 }
+                if (minKey !== Infinity) {
+                    var interactive = validInteractives[minIdx].obj;
+                    now = Date.now();
+                    console.log("START INTERACTION");
+                    this.interacting = interactive.beginInteraction(this, now) && {
+                        interactiveId:interactive.id,
+                        startTime:now
+                    };
+                }
+                
             }
-            if (minKey !== Infinity) {
-                var interactive = validInteractives[minIdx].obj;
-                now = Date.now();
-                this.interacting = interactive.beginInteraction(this, now) && {
-                    interactiveId:interactive.id,
-                    startTime:now
-                };
-            }
-            
         }
-    }
+    //}
     if (this.attackFrame) {
         // Player just attacked. see if he hit anything.
         this.attackFrame = false;
         //hit test (server only, client positions are unreliable)
-        if (io) {
+        if (isServer) {
             io.sockets.emit('newEntity', {'position': this.position, 'angle':this.angle, 'type':Entity.ATTACK});
             for (var i = 0; i < players.length; i++) {
                 var player2 = players[i];
@@ -170,8 +173,9 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
                             player2.alive = false;
                             player2.socket.join('spectator');
                             var corpse = new Searchable(world.getNextObjectId(), player2.position, angleDiff, Searchable.CORPSE);
+                            corpse.contains = player2.items[0].length;
                             world.searchables.push(corpse);
-                            io.sockets.emit('newEntity', {'id':corpse.id, 'position': corpse.position, 'angle':corpse.angle, 'type':Searchable.CORPSE});
+                            io.sockets.emit('newEntity', {'id':corpse.id, 'position': corpse.position, 'angle':corpse.angle, 'type':Searchable.CORPSE, 'contains':corpse.contains});
                         }
                     }
                 }
@@ -328,6 +332,15 @@ Player.prototype.checkCollisions = function (delta, world) {
       this.velocity.y = Math.min(this.velocity.y, 0);  
     } 
 };
+
+Player.prototype.stopInteracting = function (interactive) {
+    if (this.interacting) {
+        interactive = interactive === undefined ? this.world.getObjectById(this.interacting.interactiveId) : interactive;
+        interactive.endInteraction(this, Date.now())
+        this.interacting = false;
+    }
+}
+
 
 Player.prototype.getIdentityInfo = function () {
     return {'color': Player.COLORS[ this.identity % Player.COLORS.length ], 'name': Player.NAMES[ this.identity % Player.NAMES.length ]};

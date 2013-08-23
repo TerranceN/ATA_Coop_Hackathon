@@ -25,6 +25,7 @@ var World = function( numPlayers ) {
 	this.width = this.size.x * this.gridunit;
 	this.height = this.size.y * this.gridunit;
 	this.rooms = new Array();
+    this.objectiveRoomIdx = -1;
 
 	this.tiles = new Array(this.size.x);
 
@@ -56,6 +57,10 @@ World.prototype.getSpawn = function(){
 	return Vector2(10,10);
 }
 
+World.prototype.activeObjective = function (player) {
+    return this.rooms[this.objectiveRoomIdx].bounds.contains(player.position);
+}
+
 World.prototype.make = function(other) {
 	this.size = other.size;
 	this.gridunit = other.gridunit;
@@ -73,6 +78,8 @@ World.prototype.make = function(other) {
 	this.numPlayers = other.numPlayers;
 
 	this.tiles = other.tiles;
+    
+    this.objectiveRoomIdx = other.objectiveRoomIdx;
 }
 
 World.prototype.generate = function() {
@@ -132,7 +139,7 @@ World.prototype.generate = function() {
 		}
 	}
 
-	this.rooms.length = finalRooms;
+	this.objectiveRoomIdx = Utility.randIntInRange(0, this.rooms.length);
 
 	this.connectRooms();
 }

@@ -44,8 +44,7 @@ var Searchable = function(id, position, angle, type, duration) {
      * their particular begin interaction timestamps.
      */
     this.interactions = [];
-    this.items = [];
-
+    this.contains = 1;
 
     this.beginInteraction = idleBeginInteraction;
     this.endInteraction = idleEndInteraction;
@@ -79,9 +78,13 @@ var idleEndInteraction = function (player, time) {}
 var allowPlayerInteraction = function (player) {
     return !player.interacting && player.items[Item.TYPES.objective].length < Item.MAX_OWN[Item.TYPES.objective];
 }
-function generateOnPlayerSuccess (objectiveID) {
+function generateOnPlayerSuccess (objectiveId) {
     var onPlayerSuccess = function (player) {
-        player.items[Item.TYPES.objective].push(new Item(objectiveID, Item.TYPES.objective, null));
+    	console.log("GOT AN ITEM!!!")
+        for (var i = 0; i < this.contains; i++) {
+		    player.items[Item.TYPES.objective].push(new Item(objectiveId, Item.TYPES.objective, null));
+	    }
+        this.contains = 0;
     }
     return onPlayerSuccess;
 }
@@ -99,6 +102,7 @@ Searchable.prototype.make = function(other) {
 	this.angle = other.angle;
 	this.type = other.type;
 	this.duration = other.duration;
+	this.contains = other.contains;
 }
 
 Searchable.prototype.beginInteraction = function (player, time) {
