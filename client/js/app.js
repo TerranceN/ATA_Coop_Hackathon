@@ -199,6 +199,10 @@ resources.load([
     'client/img/sprites.png',
     'client/img/terrain.png',
     'client/img/player1.png',
-    'client/img/attack.png'
+    'client/img/attack.png',
+    'client/img/hats/hat1.png',
+    'client/img/hats/hat2.png',
+    'client/img/hats/hat3.png',
+    'client/img/hats/hat4.png'
 ]);
 resources.onReady(init);

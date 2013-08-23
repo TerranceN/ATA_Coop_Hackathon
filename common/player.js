@@ -15,6 +15,7 @@ var Player = function (id, socket, isServer, io) {
     this.velocity = new Vector2();
     this.size = 15;
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0, 1]);
+    this.hat = new Sprite('client/img/hats/hat' + id % 3 + '.png', [0, 0], [24, 24], [0, 1]);
 
     this.controlsDirection = new Vector2();
     this.upPressed = false;
