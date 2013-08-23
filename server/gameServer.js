@@ -1,5 +1,5 @@
 var Player = require("../common/player");
-var world = require("../common/world");
+var World = require("../common/world");
 var ioModule = require("socket.io");
 var io;
 
@@ -8,6 +8,7 @@ var entities = [];
 var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
+var world = new World();
 
 var getNextPlayerId = function () {
     lastPlayerId += 1;
@@ -23,7 +24,7 @@ var newPlayer = function (socket) {
 var initConnectionHandler = function () {
     io.sockets.on('connection', function (socket) {
         var player = newPlayer(socket);
-        socket.emit('connectionAccepted', {'id': player.id});
+        socket.emit('connectionAccepted', {'id': player.id, 'world':world});
         socket.on('disconnect', function () {
             players.splice(players.indexOf(player), 1);
             io.sockets.emit('userDisconnected', {'id': player.id});

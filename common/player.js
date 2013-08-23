@@ -1,5 +1,5 @@
 var Vector2 = require('./vector2');
-var world = require('./world');
+var World = require('./world');
 var Sprite = require('./sprite');
 var Entity = require('./entity');
 
@@ -21,7 +21,7 @@ var Player = function (id, socket, isServer, io) {
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
     this.size = 15;
-    this.hatId = 1;
+    this.hatId = Math.floor(Math.random() * 4) + 1;
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
     this.colliding = false
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
@@ -32,6 +32,7 @@ var Player = function (id, socket, isServer, io) {
     this.leftPressed = false;
     this.rightPressed = false;
     this.attackPressed = false;
+    this.world = new World();
 
     if (typeof(socket) != 'undefined') {
         if (typeof(isServer) == 'undefined') {
@@ -55,6 +56,11 @@ var sign = function (num) {
 
 Player.prototype = new Entity();        // Set prototype to Person's
 Player.prototype.constructor = Player;
+
+Player.prototype.setHatId = function(hatId) {
+    this.hatId = hatId;
+    this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
+}
 
 Player.prototype.setKey = function (event, status) {
     var code = event.keyCode;
@@ -161,27 +167,27 @@ Player.prototype.checkCollisions = function (delta) {
     if(this.position.x < this.size) {
         this.position.x = this.size;
     }
-    if(this.position.x > world.width - this.size) {
-        this.position.x = world.width - this.size;
+    if(this.position.x > this.world.width - this.size) {
+        this.position.x = this.world.width - this.size;
     }
 
     if(this.position.y < this.size) {
         this.position.y = this.size;
     }
-    if(this.position.y > world.height - this.size) {
-        this.position.y = world.height - this.size;
+    if(this.position.y > this.world.height - this.size) {
+        this.position.y = this.world.height - this.size;
     }
 
-    var minTileX = Math.max(0, Math.floor((this.position.x - this.size) / world.gridunit));
-    var maxTileX = Math.min(world.size.x - 1, Math.floor((this.position.x + this.size) / world.gridunit));
-    var minTileY = Math.max(0, Math.floor((this.position.y - this.size) / world.gridunit));
-    var maxTileY = Math.min(world.size.y - 1, Math.floor((this.position.y + this.size) / world.gridunit));
+    var minTileX = Math.max(0, Math.floor((this.position.x - this.size) / this.world.gridunit));
+    var maxTileX = Math.min(this.world.size.x - 1, Math.floor((this.position.x + this.size) / this.world.gridunit));
+    var minTileY = Math.max(0, Math.floor((this.position.y - this.size) / this.world.gridunit));
+    var maxTileY = Math.min(this.world.size.y - 1, Math.floor((this.position.y + this.size) / this.world.gridunit));
 
     this.colliding = false;
     // Check collision with objects in map
     for (var i = minTileX; i <= maxTileX; ++i) {
         for (var j = minTileY; j <= maxTileY; ++j) {
-            if (world.tiles[i][j] == 1) {
+            if (this.world.tiles[i][j] == 1) {
                 this.colliding = true;
             }
         }

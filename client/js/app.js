@@ -1,6 +1,6 @@
 var Player = require('../../common/player');
 var Vector2 = require('../../common/vector2');
-var world = require("../../common/world");
+var World = require("../../common/world");
 var Sprite = require("../../common/sprite");
 var Entity = require("../../common/entity");
 
@@ -99,6 +99,11 @@ var init = function init() {
             });
             main();
         }
+        if (typeof(data['world']) != 'undefined') {
+            console.log(data['world']);
+            userPlayer.world = new World();
+            userPlayer.world.make(data['world']);
+        }
     });
 }
 
@@ -141,24 +146,24 @@ function render() {
     // Fill the area of the world that is in bounds as white
     ctx.translate(screenOffset.x, screenOffset.y);
     ctx.beginPath();
-    ctx.rect(0, 0, world.width, world.height);
+    ctx.rect(0, 0, userPlayer.world.width, userPlayer.world.height);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
-    for (var i = 0; i < world.size.x; ++i) {
-        for (var j = 0; j < world.size.y; ++j) {
+    for (var i = 0; i < userPlayer.world.size.x; ++i) {
+        for (var j = 0; j < userPlayer.world.size.y; ++j) {
             var tile_url = 'client/img/grass.png';
-            if (world.tiles[i][j] == 0) { // ground
+            if (userPlayer.world.tiles[i][j] == 0) { // ground
                 var tile_url = 'client/img/road.png';
-            } else if (world.tiles[i][j] == 1) { // wall
+            } else if (userPlayer.world.tiles[i][j] == 1) { // wall
                 var tile_url = 'client/img/wall.png';
-            } else if (world.tiles[i][j] == -1) { // DEBUG
+            } else if (userPlayer.world.tiles[i][j] == -1) { // DEBUG
                 var tile_url = 'none';
             }
             if (tile_url != 'none') {
                 ctx.drawImage(resources.get(tile_url),
-                  i*world.gridunit, j*world.gridunit,
-                  world.gridunit, world.gridunit);
+                  i*userPlayer.world.gridunit, j*userPlayer.world.gridunit,
+                  userPlayer.world.gridunit, userPlayer.world.gridunit);
             }
         }
     }
@@ -183,7 +188,7 @@ function render() {
     // outline the edge of the world]
     ctx.translate(screenOffset.x, screenOffset.y);
     ctx.beginPath();
-    ctx.rect(0, 0, world.width, world.height);
+    ctx.rect(0, 0, userPlayer.world.width, userPlayer.world.height);
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#000000';
     ctx.stroke();

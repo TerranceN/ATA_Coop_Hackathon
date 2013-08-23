@@ -24,8 +24,18 @@ var World = function() {
 		}
 	}
 
-
 	this.generate();
+}
+
+World.prototype.make = function(other) {
+	this.size = other.size;
+	this.gridunit = other.gridunit;
+
+	this.width = other.width;
+	this.height = other.height;
+	this.rooms = other.rooms;
+
+	this.tiles = other.tiles;
 }
 
 World.prototype.generate = function() {
@@ -137,6 +147,4 @@ World.prototype.toTileCoord = function(position) {
 	return new Vector2(Math.floor(position.x / this.gridunit), Math.floor(position.y / this.gridunit));
 }
 
-var world = new World();
-
-module.exports = world;
+module.exports = World;
