@@ -103,6 +103,7 @@ Player.prototype.update = function (delta, players, io) {
                         //the second player should be within a 60 degree angle difference of the direction this player is facing
                         if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 3) {
                             player2.alive = false;
+                            player2.socket.join('spectator');
                             io.sockets.emit('newEntity', {'position': player2.position, 'angle':angleDiff, 'type':Entity.CORPSE});
                         }
                     }
