@@ -30,6 +30,9 @@ Player.prototype.setKey = function (event, status) {
     } else {
         if (code == 13 && status == false){
             chatInputBox.focus();
+        } else if (key == ' ') {
+            this.socket.emit('action', status);
+            this.actionQueue.push(status);
         } else {
             switch (key) {
                 case 'W': case ',': {

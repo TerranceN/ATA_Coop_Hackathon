@@ -10,6 +10,7 @@ var wall = 1;
 var nothing = 2;
 
 var World = function( numPlayers ) {
+    this.lastObjectID = 0;
 	if (typeof(numPlayers) == 'undefined') {
 		numPlayers = 5;
 	}
@@ -33,6 +34,11 @@ var World = function( numPlayers ) {
 	}
 
 	this.generate();
+}
+
+World.prototype.getNextObjectID = function () {
+    this.lastObjectID++;
+    return this.lastObjectID;
 }
 
 World.prototype.getSpawn = function(){
@@ -207,11 +213,31 @@ World.prototype.connect = function(roomA, roomB) {
 
 World.prototype.createObjects = function() {
 	console.log("create objects");
+    world = this;
 	// Create rugs
 	var numRugs = 1;//Math.floor(Math.random() * 5 + 2);
-
+    var searchingBeginInteraction = function (player, time) {
+        return false;
+    };
+    var idleBeginInteraction = function (player, time) {
+        if (this.allowPLayerInteraction(player)) {
+            this.interactions.push({player:player, startTime:time});
+            this.beginInteraction = searchingBeginInteraction;
+        }
+    }
+    var searchingEndInteraction = function (player, time) {
+        interaction = interactions.shift();
+        if (time - interaction.startTime >= this.duration) {
+            this.onPlayerSuccess(interaction.player);
+        }
+    }
+    var onPlayerSuccess = function (player) {
+        
+    }
 	for (var i = 0; i < numRugs; ++i) {
-		var rug = new Searchable(Searchable.RUG);
+		var rug = new Searchable(this.getNextObjectID, Searchable.RUG, 3000);
+        
+        
 
 		var room = this.rooms[0];
 

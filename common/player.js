@@ -39,6 +39,9 @@ var Player = function (id, socket, isServer) {
     this.attackPressed = false;
     this.world = new World();
     this.attackFrame = false; //set to true whe nthe user attacks to indicate it needs to do a hitTest
+    this.actionQueue = [];
+    this.interacting = false;
+    this.items = [[], [], [], []];
 
     if (typeof(socket) != 'undefined') {
         if (typeof(isServer) == 'undefined') {
@@ -67,13 +70,8 @@ var sign = function (num) {
 
 // map an angle to an angle within -pi and pi
 var angleLessThanPI = function (angle) {
-    while (angle > Math.PI) {
-        angle -= Math.PI;
-    }
-    while (angle < -Math.PI) {
-        angle += Math.PI;
-    }
-    return angle;
+    angle = angle % (2 * Math.PI);
+    return angle <= Math.PI ? angle : 2 * Math.PI - angle;
 }
 
 
@@ -93,7 +91,63 @@ Player.prototype.update = function (delta, players, io) {
     this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
     this.checkCollisions(delta);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * Player.DAMPING));
-
+    
+    var action;
+    if (this.interacting) {
+        var now;
+        do {
+            action = this.actionQueue.shift();
+        } while (action && this.actionQueue.length);
+        if (!action) {
+            now = Date.now();
+            interactive.endInteraction(this, now);
+            this.interacting = false;
+        } else {
+            var interactive = this.world.getObjectById(this.interacting.interactiveId);
+            now = Date.now();
+            if (Date.now() - this.interacting.startTime >= interactive.duration) {
+                interactive.endInteraction(this, now);
+                this.interacting = false;
+            }
+        }
+    }
+    if (this.actionQueue.length && !this.interacting) {
+        action = false;
+        while (this.actionQueue.length) {
+            action = action || this.actionQueue.shift()
+        }
+        if (action) {
+            var interactives = this.world.searchables;
+            var validInteractives = [];
+            var interactive;
+            var posDiff, angleDiff, score;
+            for (var i = 0; i < interactives.length(); ++i) {
+                interactive = interactives[i];
+                posDiff = interactive.position.add(this.position.scale(-1))
+                angleDiff = Math.atan2(posDiff.y, posDiff.x);
+                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 6 && posDiff.length() < 30) {
+                    validInteractives.push({key:posDiff.length(), obj:interactive});
+                }
+            }
+            var idx, minIdx, minKey;
+            minKey = Infinity;
+            for (idx = 0; idx < validInteractives.length; ++i) {
+                if (validInteractives[idx].key < minKey) {
+                    minKey = validInteractives[idx].key;
+                    minIdx = idx;
+                }
+            }
+            if (minKey !== Infinity) {
+                var interactive = validInteractives[minIdx].obj;
+                now = Date.now();
+                this.interacting = interactive.beginInteraction(this, now) && {
+                    interactiveId:interactive.id,
+                    startTime:now
+                };
+            }
+            
+        }
+    }
     if (this.attackFrame) {
         // Player just attacked. see if he hit anything.
         this.attackFrame = false;
