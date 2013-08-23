@@ -8,7 +8,7 @@ var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(
 var playerSpeed = 30;
 var playerDamping = 6;
 
-var Player = function (id, socket, isServer) {
+var Player = function (id, socket, isServer, io) {
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
@@ -23,13 +23,14 @@ var Player = function (id, socket, isServer) {
     this.downPressed = false;
     this.leftPressed = false;
     this.rightPressed = false;
+    this.attackPressed = false;
 
     if (typeof(socket) != 'undefined') {
         if (typeof(isServer) == 'undefined') {
             isServer = false;
         }
 
-        this.createListeners(socket, isServer);
+        this.createListeners(socket, isServer, io);
     }
 };
 
@@ -64,6 +65,13 @@ Player.prototype.setKey = function (event, status) {
         case 'D': {
             this.rightPressed = status;
         } break;
+        case 'Q': {
+            // Attack button was previously released and is now pressed.
+            if (status && !this.attackPressed) {
+                this.socket.emit("attack", {angle: this.angle});
+            }
+            this.attackPressed = status;
+        }
     }
 
     if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
@@ -71,7 +79,7 @@ Player.prototype.setKey = function (event, status) {
     }
 }
 
-Player.prototype.createListeners = function (socket, isServer) {
+Player.prototype.createListeners = function (socket, isServer, io) {
     var player = this;
     if (isServer) {
         socket.on('setKey', function (data) {
@@ -85,6 +93,14 @@ Player.prototype.createListeners = function (socket, isServer) {
                 player.rightPressed = data['status'];
             }
         });
+
+        socket.on('attack', function (data) {
+            player.angle = data['angle'];
+            if (io) {
+                io.sockets.emit('newEntity', {'position': player.position, 'angle':player.angle, 'type':Entity.ATTACK});
+            }
+        });
+
     } else {
         document.addEventListener('keydown', function(e) {
             player.setKey(e, true);
@@ -102,44 +118,6 @@ Player.prototype.createListeners = function (socket, isServer) {
         });
 
         document.addEventListener('mousemove', function (evt) {
-
-            /*
-            var totalOffsetX = 0;
-            var totalOffsetY = 0;
-            var canvasX = 0;
-            var canvasY = 0;
-            var currentElement = canvas;
-
-            do{
-                totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
-                totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
-            }
-            while(currentElement = currentElement.offsetParent)
-
-            canvasX = evt.pageX - totalOffsetX;
-            canvasY = evt.pageY - totalOffsetY;
-
-            player.mouseX = canvasX;
-            player.mouseY = canvasY;
-            */
-
-            /*
-            var canvas = document.getElementById('canvas');
-            var obj = canvas;
-            var top = 0;
-            var left = 0;
-            while (obj && obj.tagName != evt.target) {
-                top += obj.offsetTop;
-                left += obj.offsetLeft;
-                obj = obj.offsetParent;
-            }*/
-
-            // return relative mouse position
-            /*
-            player.mouseX = evt.clientX - left + window.pageXOffset;
-            player.mouseY = evt.clientY - top + window.pageYOffset;
-            */
-
             if (evt.target == canvas) {
                 if (evt.offsetX) {
                     mouse = new Vector2(evt.offsetX, evt.offsetY);
