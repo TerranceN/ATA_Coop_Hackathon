@@ -7,3 +7,7 @@ module.exports.sign = function (num) {
         return 0;
     }
 }
+
+module.exports.randIntInRange = function (lo, hi) {
+    return Math.floor(Math.random() * (hi - lo) + lo);
+}

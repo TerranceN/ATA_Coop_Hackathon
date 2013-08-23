@@ -96,6 +96,15 @@ var init = function init() {
                                 players[j].alive = thisPlayerUpdate['alive'];
                                 players[j].targetOffset = oldPosition.add(players[j].position.scale(-1))
                                 players[j].targetOffsetCount = 0;
+                                players[j].items = [];
+                                var itemdata = thisPlayerUpdate['items'];
+                                for (var k = 0; k < itemdata.length; ++k) {
+                                    players[j].items.push([]);
+                                    for (var m = 0; m < itemdata[k].length; ++m) {
+                                        item = itemdata[k][m];
+                                        players[j].items[k].push({"id":item.id, "type":item.type});
+                                    }
+                                }
                                 // The angle of the current player is decided by his mouse position rather than the server.
                                 if (id != userPlayer.id) {
                                     players[j].angle = thisPlayerUpdate['angle'];
@@ -155,7 +164,9 @@ var init = function init() {
 
             socket.on('newEntity', function (data) {
                 if (data['type'] == Searchable.CORPSE) {
-                    world.searchables.push(new Searchable(data['id'], new Vector2(data['position'].x, data['position'].y), data['angle'], Searchable.CORPSE));
+                    var corpse = new Searchable(data['id'], new Vector2(data['position'].x, data['position'].y), data['angle'], Searchable.CORPSE);
+                    corpse.contains = data['contains'];
+                    world.searchables.push(corpse);
                 } else {
                     entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
                 }
