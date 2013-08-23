@@ -1,4 +1,4 @@
-
+var Item = require("../common/item");
 var World = require("../common/world");
 minPlayers = 2;
 var io;
@@ -16,6 +16,11 @@ gameManager.prototype.GAMEOVER = 0;
 gameManager.prototype.WAITINGFORPLAYERS = 1;
 gameManager.prototype.PREPARINGTOSTART = 2;
 gameManager.prototype.RUNNING = 3;
+
+gameManager.prototype.ROLES = {
+    innocent:0,
+    assassin:1
+}
 
 gameManager.prototype.newGame = function ( players ){
     //count up number of players who want to play
@@ -85,8 +90,11 @@ gameManager.prototype.checkState = function ( players ) {
         if (info['player'] - info['assassin'] <= 0){
             this.endGame("Game Over: The assassins have killed everyone else.");
         }
-        if (info['assassin'] == 0){
+        /*if (info['assassin'] == 0){
             this.endGame("Game Over: The assassins are dead. Everyone is safe.");
+        }*/
+        if (this.objectiveCondition(players)) {
+            this.endGame("Game Over: the innocents have fulfilled their objective!");
         }
     }
 }
@@ -109,6 +117,22 @@ gameManager.prototype.endGame = function ( message ) {
     this.lastActive = Date.now();
     this.state = this.GAMEOVER;
     io.sockets.emit('gamemessage', {'message': message});
+}
+
+gameManager.prototype.objectiveCondition = function (players) {
+    var objectives = 0;
+    var player;
+    for (var i = 0; i < players.length; ++i) {
+        player = players[i];
+        if (player.alive && player.role == this.ROLES.innocent && this.world.activeObjective(player)) {
+            objectives += player.items[Item.TYPES.objective].length;
+        }
+    }
+    if (objectives >= 5) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 module.exports = gameManager;
