@@ -13,3 +13,5 @@ Item.TYPES = {
 }
 
 Item.MAX_OWN = [1, Infinity, 1, Infinity];  // Use by Item.MAX_OWN[Item.Types[< type >]]
+
+module.exports = Item;

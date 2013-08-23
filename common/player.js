@@ -2,6 +2,7 @@ var Vector2 = require('./vector2');
 var World = require('./world');
 var Sprite = require('./sprite');
 var Entity = require('./entity');
+var Searchable = require('./searchable');
 
 var hatSizes = [
     [28, 24],
@@ -120,7 +121,7 @@ Player.prototype.update = function (delta, players, io) {
             var validInteractives = [];
             var interactive;
             var posDiff, angleDiff, score;
-            for (var i = 0; i < interactives.length(); ++i) {
+            for (var i = 0; i < interactives.length; ++i) {
                 interactive = interactives[i];
                 posDiff = interactive.position.add(this.position.scale(-1))
                 angleDiff = Math.atan2(posDiff.y, posDiff.x);
@@ -165,7 +166,9 @@ Player.prototype.update = function (delta, players, io) {
                         if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 3) {
                             player2.alive = false;
                             player2.socket.join('spectator');
-                            io.sockets.emit('newEntity', {'position': player2.position, 'angle':angleDiff, 'type':Entity.CORPSE});
+                            var corpse = new Searchable(world.getNextObjectID(), player2.position, angleDiff, Searchable.CORPSE);
+                            world.searchables.push(corpse);
+                            io.sockets.emit('newEntity', {'id':corpse.id, 'position': corpse.position, 'angle':corpse.angle, 'type':Searchable.CORPSE});
                         }
                     }
                 }
