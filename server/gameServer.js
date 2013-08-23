@@ -41,7 +41,7 @@ var initConnectionHandler = function () {
                 message['name'] = "Spectator" + player.id;
                 message['color'] = ""
                 console.log(message);
-                io.sockets.emit('chat', message);
+                io.sockets.in('spectator').emit('chat', message);
             }
         });
     });

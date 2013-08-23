@@ -48,9 +48,6 @@ var Player = function (id, socket, isServer, io) {
     }
 };
 
-Player.ALIVE = 1;
-Player.DEAD = 0;
-
 var sign = function (num) {
     if (num < 0) {
         return -1;
