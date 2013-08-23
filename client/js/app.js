@@ -9,7 +9,8 @@ var Entity = require("../../common/entity");
 var userPlayer;
 var players = [];
 var entities = [];
-var world;
+var world = new World();
+var visionRange = 300;
 
 //chat parameters
 var isTyping = false;
@@ -60,6 +61,9 @@ var init = function init() {
     var socket = io.connect(document.URL);
     var newestMessageTime = 0;
     socket.on('connectionAccepted', function(data) {
+        if (typeof(data['world']) != 'undefined') {
+            world.make(data['world']);
+        }
         if (typeof(data['id']) != 'undefined') {
             userPlayer = new Player(data['id'], socket);
             players.push(userPlayer);
@@ -100,7 +104,6 @@ var init = function init() {
                             newPlayer.position.y = thisPlayerUpdate['position'].y;
                             newPlayer.velocity.x = thisPlayerUpdate['velocity'].x;
                             newPlayer.velocity.y = thisPlayerUpdate['velocity'].y;
-                            newPlayer.world = world;
                         }
                     }
                 } else {
@@ -118,6 +121,14 @@ var init = function init() {
                 chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
             });
 
+            socket.on('newgame', function (data) {
+                if (typeof(data['world']) != 'undefined') {
+                    console.log(data['world']);
+                    world.make(data['world']);
+                }
+            });
+
+
             socket.on('userDisconnected', function (data) {
                 for (var i = players.length - 1; i >= 0; i--) {
                     if (players[i].id == data['id']) {
@@ -130,12 +141,6 @@ var init = function init() {
                 entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
             });
             main();
-        }
-        if (typeof(data['world']) != 'undefined') {
-            world = new World();
-            console.log(world);
-            world.make(data['world']);
-            userPlayer.world = world;
         }
     });
 }
@@ -153,7 +158,7 @@ function update(dt) {
 
 function updateEntities(dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players);
+        players[i].update(dt, players, world);
     }
     for (var i = 0; i < entities.length; i++) {
         entities[i].updateAnimation(dt);
@@ -182,25 +187,25 @@ function render() {
     // Fill the area of the world that is in bounds as white
     ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
-    ctx.rect(0, 0, userPlayer.world.width, userPlayer.world.height);
+    ctx.rect(0, 0, world.width, world.height);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
     // Draw map
-    for (var i = 0; i < userPlayer.world.size.x; ++i) {
-        for (var j = 0; j < userPlayer.world.size.y; ++j) {
+    for (var i = 0; i < world.size.x; ++i) {
+        for (var j = 0; j < world.size.y; ++j) {
             var tile_url = 'client/img/grass.png';
-            if (userPlayer.world.tiles[i][j].id == 0) { // ground
+            if (world.tiles[i][j].id == 0) { // ground
                 var tile_url = 'client/img/road.png';
-            } else if (userPlayer.world.tiles[i][j].id == 1) { // wall
+            } else if (world.tiles[i][j].id == 1) { // wall
                 var tile_url = 'client/img/wall.png';
-            } else if (userPlayer.world.tiles[i][j].id == -1) { // DEBUG
+            } else if (world.tiles[i][j].id == -1) { // DEBUG
                 var tile_url = 'none';
             }
             if (tile_url != 'none') {
                 ctx.drawImage(resources.get(tile_url),
-                  i*userPlayer.world.gridunit, j*userPlayer.world.gridunit,
-                  userPlayer.world.gridunit, userPlayer.world.gridunit);
+                  i*world.gridunit, j*world.gridunit,
+                  world.gridunit, world.gridunit);
             }
         }
     }
@@ -208,12 +213,12 @@ function render() {
     // outline the edge of the world]
     //ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
-    ctx.rect(0, 0, userPlayer.world.width, userPlayer.world.height);
+    ctx.rect(0, 0, world.width, world.height);
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#000000';
     ctx.stroke();
 
-    userPlayer.world.draw(canvas, ctx);
+    world.draw(canvas, ctx);
     for (var i = 0; i < entities.length; i++) {
         entities[i].render(canvas, ctx);
     }
@@ -223,28 +228,47 @@ function render() {
 
     ctx.setTransform(1,0,0,1,0,0);
 
+    //draw max vision range effect
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.arc(canvas.width/2, canvas.height/2, visionRange, 0, 2*Math.PI, true);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.arc(canvas.width/2, canvas.height/2, visionRange*0.7, 0, 2*Math.PI, true);
+    //ctx.arc(canvas.width/2, canvas.height/2, visionRange, 0, 2*Math.PI, true);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fill();
+
     // Draw minimap
     var minimapTileSize = 4;
-    for (var i = 0; i < userPlayer.world.size.x; ++i) {
-        for (var j = 0; j < userPlayer.world.size.y; ++j) {
+    for (var i = 0; i < world.size.x; ++i) {
+        for (var j = 0; j < world.size.y; ++j) {
             var color = 'none';
-            if (userPlayer.world.tiles[i][j].id == 0) { // ground
+            if (world.tiles[i][j].id == 0) { // ground
                 color = '#8E5A26';
-            } else if (userPlayer.world.tiles[i][j].id == 1) { // wall
+            } else if (world.tiles[i][j].id == 1) { // wall
                 color  = '#171717';
-            } else if (userPlayer.world.tiles[i][j].id == -1) { // DEBUG
+            } else if (world.tiles[i][j].id == -1) { // DEBUG
                 color = '#FFFFFF';
             }
-            if (color != 'none' && (userPlayer.visitedStructures & userPlayer.world.tiles[i][j].owner_id)) {
+            if ( world.tiles[i][j] == 'undefined'){
+                console.log(world);
+            }
+
+            if (color != 'none' && (userPlayer.visitedStructures & world.tiles[i][j].owner_id)) {
                 ctx.fillStyle = color;
                 ctx.fillRect(i*minimapTileSize, j*minimapTileSize, minimapTileSize, minimapTileSize);
             }
         }
     }
     // Draw player on minimap
-    var playerTile = userPlayer.world.toTileCoord(userPlayer.position);
+    var playerTile = world.toTileCoord(userPlayer.position);
     ctx.fillStyle = "#FBDB0C";
     ctx.fillRect(playerTile.x*minimapTileSize, playerTile.y*minimapTileSize, minimapTileSize, minimapTileSize);
+
 };
 
 function sendMessage(){

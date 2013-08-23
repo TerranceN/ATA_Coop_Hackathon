@@ -25,8 +25,8 @@ var Player = function (id, socket, isServer) {
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     //tracks player status. identity determines name and colour and can be changed
-    this.alive = true;
-    this.identity = id;
+    this.alive = false;
+    this.identity = 0;
     this.role = 0;
     this.nextGame = true;
 
@@ -36,7 +36,6 @@ var Player = function (id, socket, isServer) {
     this.leftPressed = false;
     this.rightPressed = false;
     this.attackPressed = false;
-    this.world = new World();
     this.attackFrame = false; //set to true whe nthe user attacks to indicate it needs to do a hitTest
 
     if (typeof(socket) != 'undefined') {
@@ -88,9 +87,9 @@ Player.prototype.spawn = function(position) {
     this.position = position
 }
 
-Player.prototype.update = function (delta, players, io) {
+Player.prototype.update = function (delta, players, world, io) {
     this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
-    this.checkCollisions(delta);
+    this.checkCollisions(delta, world);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * Player.DAMPING));
 
     if (this.attackFrame) {
@@ -132,27 +131,26 @@ Player.prototype.getSmoothedPosition = function () {
 }
 
 
-Player.prototype.checkCollisions = function (delta) {
-
+Player.prototype.checkCollisions = function (delta, world) {
     // Track which rooms the user has been to
-    var i = Math.floor(this.position.x / this.world.gridunit);
-    var j = Math.floor(this.position.y / this.world.gridunit);
-    this.visitedStructures = this.visitedStructures | this.world.tiles[i][j].owner_id;
+    var i = Math.floor(this.position.x / world.gridunit);
+    var j = Math.floor(this.position.y / world.gridunit);
+    this.visitedStructures = this.visitedStructures | world.tiles[i][j].owner_id;
 
     //COLLISION TEST
     var x2 = this.position.x + this.velocity.x * delta;
     var y2 = this.position.y + this.velocity.y * delta;
 
-    var gridunit = this.world.gridunit;
+    var gridunit = world.gridunit;
     var UR = this.size;
 
     //represent unit as 5 points in a plus shape
     //get the tiles covered by these points and at most 2 are on tiles different than gx gy
     //consider collisions on these different tiles and the intermediary diagonal tile
     var xmin = Math.floor(Math.max(0, x2 - UR));
-    var xmax = Math.floor(Math.min(x2 + UR, this.world.width - 1));
+    var xmax = Math.floor(Math.min(x2 + UR, world.width - 1));
     var ymin = Math.floor(Math.max(0, y2 - UR));
-    var ymax = Math.floor(Math.min(y2 + UR, this.world.height - 1));
+    var ymax = Math.floor(Math.min(y2 + UR, world.height - 1));
     var gx1 = Math.floor(xmin / gridunit);
     var gx2 = Math.floor(xmax / gridunit);
     var gx = Math.floor(x2 / gridunit);
@@ -181,7 +179,7 @@ Player.prototype.checkCollisions = function (delta) {
     }
 
     //horizontal collision test
-    if ((newgx != gx) && (this.world.tiles[newgx][gy].id == 1)) {
+    if ((newgx != gx) && (world.tiles[newgx][gy].id == 1)) {
         if (newx > x2) {
             x2 = newgx * gridunit - UR;
         } else {
@@ -191,7 +189,7 @@ Player.prototype.checkCollisions = function (delta) {
     }
 
     //vertical collision test
-    if ((newgy != gy) && (this.world.tiles[gx][newgy].id == 1)) {
+    if ((newgy != gy) && (world.tiles[gx][newgy].id == 1)) {
         if (newy > y2) {
             y2 = newgy * gridunit - UR;
         } else {
@@ -200,16 +198,16 @@ Player.prototype.checkCollisions = function (delta) {
         this.velocity.y = 0;
     }
     //corner collision possible
-    if (newgx != gx && newgy != gy && (this.world.tiles[newgx][newgy].id == 1)) {
+    if (newgx != gx && newgy != gy && (world.tiles[newgx][newgy].id == 1)) {
         //want to use circle hitbox not square
         var ox = 0;
         var oy = 0;
-        if (newx > x2) {
+        if (newgx > gx) {
             ox = newgx * gridunit - x2;
         } else {
             ox = x2 - (newgx + 1) * gridunit;
         }
-        if (newy > y2) {
+        if (newgy > gy) {
             oy = newgy * gridunit - y2;
         } else {
             oy = y2 - (newgy + 1) * gridunit;
@@ -218,21 +216,26 @@ Player.prototype.checkCollisions = function (delta) {
         var xt = Math.sqrt(UR * UR - oy * oy);
         var yt = Math.sqrt(UR * UR - ox * ox);
         //x large enough
-        var xHit = ((newx > x2) && (x2 + xt > newgx * gridunit))
-            || ((newx < x2) && (x2 - xt < (newgx + 1) * gridunit));
-        var yHit = ((newy > y2) && (y2 + yt > newgy * gridunit))
-            || ((newy < y2) && (y2 - yt < (newgy + 1) * gridunit));
+        var xHit = ((newgx > gx) && (x2 + xt > newgx * gridunit))
+            || ((newgx < gx) && (x2 - xt < (newgx + 1) * gridunit));
+        var yHit = ((newgy > gy) && (gy + yt > newgy * gridunit))
+            || ((newgy < gy) && (y2 - yt < (newgy + 1) * gridunit));
         if (xHit && yHit) {
             //collided.
-            if (newx > x2) {
-                x2 = x2 + ox - UR;
+            var offset = new Vector2(ox, oy);
+            //move the player away from the point of collision until he is unit radius away
+            offset = offset.scaleTo(UR - offset.length());
+            ox = Math.abs(offset.x);
+            oy = Math.abs(offset.y);
+            if (newgx > gx) {
+                x2 = x2 - ox;// - UR;
             } else {
-                x2 = x2 - ox + UR;
+                x2 = x2 + ox;// + UR;
             }
-            if (newy > y2) {
-                y2 = y2 + oy - UR;
+            if (newgy > gy) {
+                y2 = y2 - oy;// - UR;
             } else {
-                y2 = y2 - oy + UR;
+                y2 = y2 + oy;// + UR;
             }
             //adjust velocity according to distance from point of collision to unit
             //point of collision is x2 +- ox I think
@@ -245,18 +248,18 @@ Player.prototype.checkCollisions = function (delta) {
         }
     }
 
-    this.position.x = Math.max(UR, Math.min(x2, this.world.width - UR) );
+    this.position.x = Math.max(UR, Math.min(x2, world.width - UR) );
     if (this.position.x == UR) { 
         this.velocity.x = Math.max(this.velocity.x, 0);
     }
-    if (this.position.x == this.world.width-UR) {
+    if (this.position.x == world.width-UR) {
         this.velocity.x = Math.min(this.velocity.x, 0);
     }
-    this.position.y = y2; //Math.max(UR, Math.min(y2, this.world.height - UR) );
+    this.position.y = y2; //Math.max(UR, Math.min(y2, world.height - UR) );
     if (this.position.y == UR) {
         this.velocity.y = Math.max(this.velocity.y, 0);
     }
-    if (this.position.y == this.world.height - UR) {
+    if (this.position.y == world.height - UR) {
       this.velocity.y = Math.min(this.velocity.y, 0);  
     } 
 };

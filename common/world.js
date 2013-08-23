@@ -35,10 +35,6 @@ var World = function( numPlayers ) {
 	this.generate();
 }
 
-World.prototype.getSpawn = function(){
-	return Vector2(10,10);
-}
-
 World.prototype.make = function(other) {
 	this.size = other.size;
 	this.gridunit = other.gridunit;
@@ -309,7 +305,6 @@ World.prototype.toTileCoord = function(position) {
 
 World.prototype.draw = function (canvas, ctx) {
 	for (var i = 0; i < this.searchables.length; ++i) {
-		console.log(this.searchables[i].position);
 		this.searchables[i].render(canvas, ctx);
 	}
 }
