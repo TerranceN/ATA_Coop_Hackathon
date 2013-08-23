@@ -307,7 +307,7 @@ World.prototype.createObjects = function() {
 		var pos = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
 			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit);
 
-		var rug = new Searchable(this.getNextObjectId(), pos, 0, Searchable.CRATE, 3000);
+		var rug = new Searchable(this.getNextObjectId(), pos, 0, Searchable.CRATE);
 		rug.position = rug.position.add(rug.size.scale(1/2));
 
 		this.searchables.push(rug);

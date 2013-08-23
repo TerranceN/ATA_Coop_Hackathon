@@ -12,6 +12,6 @@ Item.TYPES = {
     modifier:3
 }
 
-Item.MAX_OWN = [1, Infinity, 1, Infinity];  // Use by Item.MAX_OWN[Item.Types[< type >]]
+Item.MAX_OWN = [Infinity, Infinity, 1, Infinity];  // Use by Item.MAX_OWN[Item.Types[< type >]]
 
 module.exports = Item;

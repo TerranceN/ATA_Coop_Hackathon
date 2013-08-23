@@ -123,7 +123,7 @@ Player.prototype.update = function (delta, players, world, io) {
                 interactive = interactives[i];
                 posDiff = interactive.position.add(this.position.scale(-1))
                 angleDiff = Math.atan2(posDiff.y, posDiff.x);
-                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 6 && posDiff.length() < 30) {
+                if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 4 && posDiff.length() < 40) {
                     validInteractives.push({key:posDiff.length(), obj:interactive});
                 }
             }

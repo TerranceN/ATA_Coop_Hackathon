@@ -20,7 +20,7 @@ var Searchable = function(id, position, angle, type, duration) {
     /* The duration in milliseconds for which we allow a user to interact with us
      * OR the duration in milliseconds it takes for the interaction to succeed
      */
-    this.duration = duration || 3000;
+    this.duration = duration || 2500;
     this.type = type;
     this.size = new Vector2();
     if (this.type == RUG) {
