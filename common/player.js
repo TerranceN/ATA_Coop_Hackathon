@@ -100,9 +100,7 @@ Player.prototype.update = function (delta, players, world, io) {
         }
         var interactive = this.world.getObjectById(this.interacting.interactiveId);
         if (!action || Date.now() - this.interacting.startTime >= interactive.duration) {
-            now = Date.now();
-            interactive.endInteraction(this, now);
-            this.interacting = false;
+            this.stopInteracting(interactive);
         }
     }
     if (this.actionQueue.length && !this.interacting) {
@@ -315,6 +313,14 @@ Player.prototype.checkCollisions = function (delta, world) {
       this.velocity.y = Math.min(this.velocity.y, 0);  
     } 
 };
+
+Player.prototype.stopInteracting(interactive) {
+    if (this.interacting) {
+        interactive = interactive === undefined ? this.world.getObjectById(this.interacting.interactiveId) : interactive;
+        interactive.endInteraction(this, Date.now())
+        this.interacting = false;
+    }
+}
 
 Player.prototype.getIdentityInfo = function ( identity ) {
     return {'color': Player.COLORS[ this.identity % Player.COLORS.length ], 'name': Player.NAMES[ this.identity % Player.NAMES.length ]};
