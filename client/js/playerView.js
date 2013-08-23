@@ -4,7 +4,7 @@ var Sprite = require("../../common/sprite");
 
 Player.prototype.draw = function (canvas, ctx) {
     var drawPos = this.getSmoothedPosition();
-    
+
     // Render the player 
     if (this.alive) { 
         ctx.beginPath();
@@ -20,7 +20,7 @@ Player.prototype.draw = function (canvas, ctx) {
         ctx.save();
         ctx.translate(drawPos.x, drawPos.y);
         ctx.rotate(this.angle);
-        ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
+        ctx.translate(-this.hat.size[0]/2 - 5, -this.hat.size[1]/2);
         this.hat.render(ctx);
         ctx.restore();
     } else {

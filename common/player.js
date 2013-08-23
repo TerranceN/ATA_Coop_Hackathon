@@ -20,15 +20,16 @@ var Player = function (id, socket, isServer) {
     this.velocity = new Vector2();
     this.size = 15;
     this.visitedStructures = 0;
-    this.hatId = Math.floor(Math.random() * hatSizes.length) + 1;
-    this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     //tracks player status. identity determines name and colour and can be changed
     this.alive = false;
-    this.identity = 0;
+    this.identity = id;
     this.role = 0;
     this.nextGame = true;
+
+    this.hatId = this.identity % hatSizes.length;
+    this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
 
     this.controlForce = new Vector2();
     this.upPressed = false;
@@ -47,7 +48,7 @@ var Player = function (id, socket, isServer) {
     }
 };
 
-Player.COLORS = ['#44ff44', '#ff4444', '#4444ff', '#99cccc', '#856788', '#856448', '#FFFFFF'];
+Player.COLORS = new Array('#44ff44', '#ff4444', '#4444ff', '#99cccc', '#856788', '#856448', '#FFFFFF');
 Player.NAMES = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue', 'name 5', 'name 6', 'WalterWhite'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400), new Vector2(400, 200), new Vector2(200, 300)]
 Player.SPEED = 1500;
