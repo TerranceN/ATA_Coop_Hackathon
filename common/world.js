@@ -42,7 +42,6 @@ World.prototype.getNextObjectId = function () {
     return this.lastObjectId;
 }
 
-World.prototype.getObjectById = 
 
 World.prototype.getSpawn = function(){
 	return Vector2(10,10);
