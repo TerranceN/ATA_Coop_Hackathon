@@ -3,7 +3,7 @@ var Player = require('../common/player');
 var Vector2 = require('../common/vector2');
 var world = require("../common/world");
 
-Player.prototype.createListeners = function (socket, isServer, io) {
+Player.prototype.createListeners = function (socket, isServer) {
     var player = this;
     socket.on('controlForce', function (data) {
         player.controlForce = new Vector2(data.x, data.y);
@@ -11,8 +11,6 @@ Player.prototype.createListeners = function (socket, isServer, io) {
 
     socket.on('attack', function (data) {
         player.angle = data['angle'];
-        if (io) {
-            io.sockets.emit('newEntity', {'position': player.position, 'angle':player.angle, 'type':Entity.ATTACK});
-        }
+        player.attackFrame = true;
     });
 };

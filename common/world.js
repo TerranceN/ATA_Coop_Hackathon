@@ -9,10 +9,11 @@ var ground = 0;
 var wall = 1;
 var nothing = 2;
 
-var World = function() {
-	this.size = new Vector2(55, 55);
+var World = function( numPlayers ) {
+	this.size = new Vector2( numPlayers * 10, numPlayers * 10 );
 	this.gridunit = 35;
 	this.lastStructureId = 1;
+	this.numPlayers = numPlayers;
 
 	this.searchables = new Array();
 	this.width = this.size.x * this.gridunit;
@@ -29,6 +30,10 @@ var World = function() {
 	}
 
 	this.generate();
+}
+
+World.prototype.getSpawn = function(){
+	return Vector2(10,10);
 }
 
 World.prototype.make = function(other) {
@@ -48,9 +53,9 @@ World.prototype.generate = function() {
 	var radius = 10;
 
 	var i = 0;
-	var retries = 20;
-	var rooms = 25;
 	var finalRooms = 0;
+	var retries = this.numPlayers * 4;
+	var rooms = this.numPlayers * 5;
 	for (i; i < rooms; ++i) {
 		var size = new Vector2(Math.floor(Math.random() * (maxSize - minSize) + minSize),
 						Math.floor(Math.random() * (maxSize - minSize) + minSize));

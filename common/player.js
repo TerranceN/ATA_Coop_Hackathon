@@ -6,8 +6,8 @@ var Entity = require('./entity');
 var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
 var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
-var playerSpeed = 750;
-var playerDamping = 4;
+var playerSpeed = 1500;
+var playerDamping = 8;
 
 var hatSizes = [
     [28, 24],
@@ -17,7 +17,7 @@ var hatSizes = [
     [24, 29]
 ]
 
-var Player = function (id, socket, isServer, io) {
+var Player = function (id, socket, isServer) {
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
@@ -32,6 +32,8 @@ var Player = function (id, socket, isServer, io) {
     //tracks player status. identity determines name and colour and can be changed
     this.alive = true;
     this.identity = id;
+    this.role = 0;
+    this.nextGame = true;
 
     this.controlForce = new Vector2();
     this.upPressed = false;
@@ -40,18 +42,22 @@ var Player = function (id, socket, isServer, io) {
     this.rightPressed = false;
     this.attackPressed = false;
     this.world = new World();
+    this.attackFrame = false; //set to true whe nthe user attacks to indicate it needs to do a hitTest
 
     if (typeof(socket) != 'undefined') {
         if (typeof(isServer) == 'undefined') {
             isServer = false;
         }
 
-        this.createListeners(socket, isServer, io);
+        this.createListeners(socket, isServer);
     }
 };
 
-Player.ALIVE = 1;
-Player.DEAD = 0;
+Player.COLORS = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
+Player.NAMES = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
+var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
+Player.SPEED = 750;
+Player.DAMPING = 4;
 
 var sign = function (num) {
     if (num < 0) {
@@ -61,6 +67,17 @@ var sign = function (num) {
     } else {
         return 0;
     }
+}
+
+// map an angle to an angle within -pi and pi
+var angleLessThanPI = function (angle) {
+    while (angle > Math.PI) {
+        angle -= Math.PI;
+    }
+    while (angle < -Math.PI) {
+        angle += Math.PI;
+    }
+    return angle;
 }
 
 
@@ -76,12 +93,37 @@ Player.prototype.spawn = function(position) {
     this.position = position
 }
 
-Player.prototype.update = function (delta) {
-    this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(playerSpeed * delta));
+Player.prototype.update = function (delta, players, io) {
+    this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
     this.position = this.position.add(this.velocity.scale(delta));
     this.checkCollisions(delta);
-    this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
+    this.velocity = this.velocity.add(this.velocity.scale(-delta * Player.DAMPING));
 
+    if (this.attackFrame) {
+        // Player just attacked. see if he hit anything.
+        this.attackFrame = false;
+        //hit test (server only, client positions are unreliable)
+        if (io) {
+            io.sockets.emit('newEntity', {'position': this.position, 'angle':this.angle, 'type':Entity.ATTACK});
+            for (var i = 0; i < players.length; i++) {
+                var player2 = players[i];
+                if (player2.id != this.id && player2.alive) {
+                    var attack_range = 40; // + player size
+                    var attack_arc = 60;
+                    var posDiff = player2.position.add(this.position.scale(-1));
+                    if (posDiff.length() < attack_range) {
+                        var angleDiff = Math.atan2(posDiff.y, posDiff.x);
+                        //the second player should be within a 60 degree angle difference of the direction this player is facing
+                        if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 3) {
+                            player2.alive = false;
+                            player2.socket.join('spectator');
+                            io.sockets.emit('newEntity', {'position': player2.position, 'angle':angleDiff, 'type':Entity.CORPSE});
+                        }
+                    }
+                }
+            }
+        }
+    }
     if (this.targetOffsetCount < 6) {
         this.targetOffsetCount += 1;
     }
@@ -129,34 +171,8 @@ Player.prototype.checkCollisions = function (delta) {
     }
 }
 
-Player.prototype.draw = function (canvas, ctx) {
-    var drawPos = this.getSmoothedPosition();
-    
-    // Render the player 
-    ctx.beginPath();
-    ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    if (this.colliding) {
-        ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
-    } else {
-        ctx.fillStyle = playerColors[this.id % playerColors.length];
-    }
-    ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#000000';
-    ctx.stroke();
-
-    this.render(canvas, ctx);
-
-    ctx.save();
-    ctx.translate(drawPos.x, drawPos.y);
-    ctx.rotate(this.angle);
-    ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
-    this.hat.render(ctx);
-    ctx.restore();
-}
-
-Player.prototype.getIdentityInfo = function ( identity ){
-    return {'color': playerColors[ this.identity % playerColors.length ], 'name': playerNames[ this.identity % playerNames.length ]};
+Player.prototype.getIdentityInfo = function ( identity ) {
+    return {'color': Player.COLORS[ this.identity % playerColors.length ], 'name': Player.NAMES[ this.identity % playerNames.length ]};
 }
 
 Player.prototype.sendMessage = function (message) {

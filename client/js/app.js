@@ -1,5 +1,6 @@
 var Player = require('../../common/player');
 require("./playerController");
+require("./playerView");
 var Vector2 = require('../../common/vector2');
 var World = require("../../common/world");
 var Sprite = require("../../common/sprite");
@@ -79,6 +80,7 @@ var init = function init() {
                                 players[j].position.y = thisPlayerUpdate['position'].y;
                                 players[j].velocity.x = thisPlayerUpdate['velocity'].x;
                                 players[j].velocity.y = thisPlayerUpdate['velocity'].y;
+                                players[j].alive = thisPlayerUpdate['alive'];
                                 players[j].targetOffset = oldPosition.add(players[j].position.scale(-1))
                                 players[j].targetOffsetCount = 0;
                                 // The angle of the current player is decided by his mouse position rather than the server.
@@ -108,6 +110,11 @@ var init = function init() {
                 chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
             });
 
+            socket.on('gamemessage', function (data) {
+                chatOutputBox.innerHTML = chatOutputBox.innerHTML + data['message'] + "<br>";
+                chatOutputBox.scrollTop = chatOutputBox.scrollHeight;
+            });
+
             socket.on('userDisconnected', function (data) {
                 for (var i = players.length - 1; i >= 0; i--) {
                     if (players[i].id == data['id']) {
@@ -132,9 +139,6 @@ var init = function init() {
 
 var gameTime = 0;
 
-// Speed in pixels per second
-var playerSpeed = 200;
-
 // Update game objects
 function update(dt) {
     gameTime += dt;
@@ -144,7 +148,7 @@ function update(dt) {
 
 function updateEntities(dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt);
+        players[i].update(dt, players);
     }
     for (var i = 0; i < entities.length; i++) {
         entities[i].updateAnimation(dt);
@@ -243,6 +247,9 @@ function sendMessage(){
     if (chatInputBox.value != ""){
         userPlayer.sendMessage(chatInputBox.value);
         chatInputBox.value = "";
+        if (userPlayer.alive){
+            canvas.focus();
+        }
     }
     return false;
 };
@@ -251,6 +258,7 @@ resources.load([
     'client/img/sprites.png',
     'client/img/terrain.png',
     'client/img/player1.png',
+    'client/img/corpse.png',
     'client/img/attack.png',
     'client/img/hats/hat1.png',
     'client/img/hats/hat2.png',

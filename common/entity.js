@@ -2,21 +2,23 @@ var Sprite = require('./sprite');
 var Vector2 = require('./vector2');
 
 var ATTACK = 'attack';
-var PLAYER = 'player';
+var CORPSE = 'corpse';
 
 var Entity = function (position, angle, type) {
     this.position = position;
     this.angle = angle;
     this.size = 15;
     if (type == ATTACK) {
-	    this.sprite = new Sprite('client/img/attack.png', [0, 0], [64, 64], 30, [0, 1, 2, 3, 4], 'horizontal', true);
+        this.sprite = new Sprite('client/img/attack.png', [0, 0], [80, 80], 30, [0, 1, 2, 3, 4], 'horizontal', true);
+    } else if (type == CORPSE) {
+        this.sprite = new Sprite('client/img/corpse.png', [0, 0], [32, 32], 1, [0]);
 	} 
     this.targetOffset = new Vector2();
     this.targetOffsetCount = 0;
 };
 
 Entity.ATTACK = ATTACK;
-Entity.PLAYER = PLAYER;
+Entity.CORPSE = CORPSE;
 
 Entity.prototype.updateAnimation = function (dt) {
 	this.sprite.update(dt);
