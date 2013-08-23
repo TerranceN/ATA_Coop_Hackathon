@@ -109,7 +109,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
             while (action && this.actionQueue.length) {
                 action = this.actionQueue.shift();
             }
-            var interactive = this.world.getObjectById(this.interacting.interactiveId);
+            var interactive = world.getObjectById(this.interacting.interactiveId);
             if (!action || Date.now() - this.interacting.startTime >= interactive.duration) {
                 this.stopInteracting(interactive);
             }
