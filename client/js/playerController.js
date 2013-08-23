@@ -50,7 +50,9 @@ Player.prototype.createListeners = function (socket, isServer) {
     });
 
     document.addEventListener('click', function (evt) {
-        player.socket.emit("attack", {angle: player.angle});
+        if (player.alive) {
+            player.socket.emit("attack", {angle: player.angle});
+        }
     });
 
     document.addEventListener('mousemove', function (evt) {
