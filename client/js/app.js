@@ -218,6 +218,9 @@ function sendMessage(){
     if (chatInputBox.value != ""){
         userPlayer.sendMessage(chatInputBox.value);
         chatInputBox.value = "";
+        if (userPlayer.alive){
+            canvas.focus();
+        }
     }
     return false;
 };

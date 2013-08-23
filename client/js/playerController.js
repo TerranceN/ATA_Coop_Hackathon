@@ -2,6 +2,8 @@ var Player = require('../../common/player');
 var Vector2 = require('../../common/vector2');
 var world = require("../../common/world");
 
+var chatInputBox = document.getElementById("chatinput");
+
 Player.prototype.setKey = function (event, status) {
     var code = event.keyCode;
     var key = String.fromCharCode(code);
@@ -11,31 +13,48 @@ Player.prototype.setKey = function (event, status) {
     this.rightPressed = this.rightPressed === undefined ? 0 : this.rightPressed;
     this.downPressed = this.downPressed === undefined ? 0 : this.downPressed;
 
-    switch (key) {
-        case 'W': {
-            this.upPressed = status;
-        } break;
-        case 'A': {
-            this.leftPressed = status;
-        } break;
-        case 'S': {
-            this.downPressed = status;
-        } break;
-        case 'D': {
-            this.rightPressed = status;
-        } break;
-        case 'Q': {
-            // Attack button was previously released and is now pressed.
-            if (status && !this.attackPressed) {
-                this.socket.emit("attack", {angle: this.angle});
+    if (document.activeElement == chatInputBox){
+        if (code == 13 && status == false){
+            if (chatInputBox.value != ""){
+                this.sendMessage(chatInputBox.value);
+                chatInputBox.value = "";
             }
-            this.attackPressed = status;
+            if (this.alive){
+                chatInputBox.blur();
+                //document.getElementById("canvas").focus();
+            }
         }
-    }
+    } else {
+        if (code == 13 && status == false){
+            chatInputBox.focus();
+        } else {
+            switch (key) {
+                case 'W': {
+                    this.upPressed = status;
+                } break;
+                case 'A': {
+                    this.leftPressed = status;
+                } break;
+                case 'S': {
+                    this.downPressed = status;
+                } break;
+                case 'D': {
+                    this.rightPressed = status;
+                } break;
+                case 'Q': {
+                    // Attack button was previously released and is now pressed.
+                    if (status && !this.attackPressed) {
+                        this.socket.emit("attack", {angle: this.angle});
+                    }
+                    this.attackPressed = status;
+                }
+            }
+        }
 
-    if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
-        this.controlForce = new Vector2(this.rightPressed - this.leftPressed, this.downPressed - this.upPressed).getNormalized();
-        this.socket.emit('controlForce', this.controlForce);
+        if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
+            this.controlForce = new Vector2(this.rightPressed - this.leftPressed, this.downPressed - this.upPressed).getNormalized();
+            this.socket.emit('controlForce', this.controlForce);
+        }
     }
 }
 
