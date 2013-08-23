@@ -4,12 +4,14 @@ var Room = require('./room');
 var Utility = require('./utility');
 var Tile = require('./tile');
 var Searchable = require('./searchable');
+var Item = require('./item');
 
 var ground = 0;
 var wall = 1;
 var nothing = 2;
 
 var World = function( numPlayers ) {
+    this.lastObjectID = 0;
 	if (typeof(numPlayers) == 'undefined') {
 		numPlayers = 5;
 	}
@@ -35,6 +37,15 @@ var World = function( numPlayers ) {
 	this.generate();
 }
 
+World.prototype.getNextObjectID = function () {
+    this.lastObjectID++;
+    return this.lastObjectID;
+}
+
+World.prototype.getSpawn = function(){
+	return Vector2(10,10);
+}
+
 World.prototype.make = function(other) {
 	this.size = other.size;
 	this.gridunit = other.gridunit;
@@ -47,11 +58,8 @@ World.prototype.make = function(other) {
 
 	this.searchables = new Array(other.searchables.length);
 	for (var i = 0; i < this.searchables.length; i++) {
-		this.searchables[i] = new Searchable(Searchable.RUG);
-		this.searchables[i].position = new Vector2(other.searchables[i].position.x, other.searchables[i].position.y);
-		this.searchables[i].angle = other.searchables[i].angle;
+		this.searchables[i] = new Searchable(other.searchables[i].id, other.searchables[i].position, other.searchables[i].angle, other.searchables[i].type);
 	}	
-	console.log(this.searchables);
 
 	this.numPlayers = other.numPlayers;
 
@@ -281,19 +289,56 @@ World.prototype.secondPass = function() {
 }
 
 World.prototype.createObjects = function() {
+	console.log("create objects");
+    world = this;
+    var searchingBeginInteraction = function (player, time) {
+        return false;
+    };
+    var idleBeginInteraction = function (player, time) {
+        if (this.allowPLayerInteraction(player)) {
+            this.interactions.push({player:player, startTime:time});
+            this.beginInteraction = searchingBeginInteraction;
+            this.endInteraction = searchingEndInteraction;
+        }
+        return true;
+    }
+    var searchingEndInteraction = function (player, time) {
+        if (player.id != this.interactions[0].player.id) {
+            return;
+        }
+        interaction = interactions.shift();
+        if (time - interaction.startTime >= this.duration) {
+            this.onPlayerSuccess(interaction.player);
+        }
+        this.beginInteraction = idleBeginInteraction;
+        this.endInteraction = idleEndInteraction;
+    }
+    var idleEndInteraction = function (player, time) {}
+    var allowPlayerInteraction = function (player) {
+        return !player.interacting && player.items[Item.TYPES.objective].length < Item.MAX_OWN[Item.TYPES.objective];
+    }
+    function generateOnPlayerSuccess (objectiveID) {
+        var onPlayerSuccess = function (player) {
+            player.items[Item.TYPES.objective].push(new Item(objectiveID, Item.TYPES.objective, null));
+        }
+        return onPlayerSuccess;
+    }
 	// Create rugs
 	var numRugs = 5;//Math.floor(Math.random() * 5 + 2);
 
 	for (var i = 0; i < numRugs; ++i) {
-		var rug = new Searchable(1);
-
 		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
-		//this.toTileCoord(
-		//*this.gridunit - rug.size.x
-		rug.position = new Vector2(room.bounds.x + Math.floor(Math.random() * (room.bounds.width - Math.ceil(rug.size.x / this.gridunit))),
-			room.bounds.y + Math.floor(Math.random() * (room.bounds.height - Math.ceil(rug.size.y / this.gridunit))))
-			.scale(this.gridunit).add(rug.size.scale(1/2));
-		rug.angle = Math.random() * Math.PI / 9 - Math.PI / 18;
+		var pos = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
+			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit);
+
+		var rug = new Searchable(this.getNextObjectID(), pos, 0, Searchable.RUG, 3000);
+		rug.position = rug.position.add(rug.size.scale(1/2));
+
+        rug.beginInteraction = idleBeginInteraction;
+        rug.endInteraction = idleEndInteraction;
+        rug.allowPlayerInteraction = allowPlayerInteraction;
+        rug.onPlayerSuccess = generateOnPlayerSuccess(i);
+        
 		this.searchables.push(rug);
 	}
 
