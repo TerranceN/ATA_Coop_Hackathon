@@ -120,8 +120,6 @@ World.prototype.connect = function(roomA, roomB) {
 	var xDir = Utility.sign(roomB.center.x - roomA.center.x);
 	var yDir = Utility.sign(roomB.center.y - roomA.center.y);
 
-	console.log("I wish I was a a little big taller");
-
 	for (var i = roomA.center.x; xDir != 0 && (xDir == -1 ? i >= roomB.center.x : i <= roomB.center.x); i += xDir) {
 		this.tiles[i][roomA.center.y] = 0;
 		if (this.tiles[i][roomA.center.y - 1] == 2) {

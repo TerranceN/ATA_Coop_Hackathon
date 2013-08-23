@@ -16,7 +16,7 @@ var hatSizes = [
     [28, 25]
 ]
 
-var Player = function (id, socket, isServer, io) {
+var Player = function (id, socket, isServer) {
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
@@ -38,18 +38,16 @@ var Player = function (id, socket, isServer, io) {
     this.rightPressed = false;
     this.attackPressed = false;
     this.world = new World();
+    this.attackFrame = true;
 
     if (typeof(socket) != 'undefined') {
         if (typeof(isServer) == 'undefined') {
             isServer = false;
         }
 
-        this.createListeners(socket, isServer, io);
+        this.createListeners(socket, isServer);
     }
 };
-
-Player.ALIVE = 1;
-Player.DEAD = 0;
 
 var sign = function (num) {
     if (num < 0) {
@@ -59,6 +57,17 @@ var sign = function (num) {
     } else {
         return 0;
     }
+}
+
+// map an angle to an angle within -pi and pi
+var angleLessThanPI = function (angle) {
+    while (angle > Math.PI) {
+        angle -= Math.PI;
+    }
+    while (angle < -Math.PI) {
+        angle += Math.PI;
+    }
+    return angle;
 }
 
 
@@ -101,7 +110,7 @@ Player.prototype.setKey = function (event, status) {
     }
 }
 
-Player.prototype.createListeners = function (socket, isServer, io) {
+Player.prototype.createListeners = function (socket, isServer) {
     var player = this;
     if (isServer) {
         socket.on('setKey', function (data) {
@@ -115,12 +124,9 @@ Player.prototype.createListeners = function (socket, isServer, io) {
                 player.rightPressed = data['status'];
             }
         });
-
         socket.on('attack', function (data) {
             player.angle = data['angle'];
-            if (io) {
-                io.sockets.emit('newEntity', {'position': player.position, 'angle':player.angle, 'type':Entity.ATTACK});
-            }
+            player.attackFrame = true;
         });
 
     } else {
@@ -155,7 +161,7 @@ Player.prototype.createListeners = function (socket, isServer, io) {
     }
 };
 
-Player.prototype.update = function (delta) {
+Player.prototype.update = function (delta, players, io) {
     if (typeof(this.socket) != 'undefined') {
         var controlsDirection = new Vector2();
         controlsDirection.y -= this.upPressed ? 1 : 0;
@@ -168,6 +174,31 @@ Player.prototype.update = function (delta) {
     this.checkCollisions(delta);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
 
+    if (this.attackFrame) {
+        // Player just attacked. see if he hit anything.
+        this.attackFrame = false;
+        //hit test
+        if (io) {
+            io.sockets.emit('newEntity', {'position': player.position, 'angle':player.angle, 'type':Entity.ATTACK});
+        }
+        for (var i = 0; i < players.length; i++) {
+            var player2 = players[i].id;
+            if (player2 != this.id) {
+                var attack_range = 40; // + player size
+                var attack_arc = 60;
+                var posDiff = player2.position.add(this.position.scale(-1));
+                var angleDiff = Math.atan2(posDiff);
+                if (posDiff.length() < attack_range) {
+                    angleDiff = angleLessThanPI(angleDiff - player.angle);
+                    //the second player should be within a 60 degree angle difference of the direction this player is facing
+                    if (Math.abs(angleDiff) < Math.PI / 3) {
+                        player2.alive = false;
+                        io.sockets.emit('newEntity', {'position': player2.position, 'angle':player2.angle, 'type':Entity.CORPSE});
+                    }
+                }
+            }
+        }
+    }
     if (this.targetOffsetCount < 6) {
         this.targetOffsetCount += 1;
     }
@@ -222,10 +253,11 @@ Player.prototype.draw = function (canvas, ctx) {
     ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
     if (this.colliding) {
         ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
-    } else {
+        ctx.fill();
+    } else if (this.alive) {
         ctx.fillStyle = playerColors[this.id % playerColors.length];
+        ctx.fill();
     }
-    ctx.fill();
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#000000';
     ctx.stroke();

@@ -144,7 +144,7 @@ function update(dt) {
 
 function updateEntities(dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt);
+        players[i].update(dt, players);
     }
     for (var i = 0; i < entities.length; i++) {
         entities[i].updateAnimation(dt);

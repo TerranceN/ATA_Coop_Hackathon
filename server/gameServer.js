@@ -49,7 +49,7 @@ var initConnectionHandler = function () {
 
 var updatePlayers = function (dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt);
+        players[i].update(dt, players, io);
     }
 
     var now = Date.now();
