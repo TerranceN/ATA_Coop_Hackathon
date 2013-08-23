@@ -1,5 +1,6 @@
 var Player = require('../../common/player');
 require("./playerController");
+require("./playerView");
 var Vector2 = require('../../common/vector2');
 var World = require("../../common/world");
 var Sprite = require("../../common/sprite");
@@ -133,9 +134,6 @@ var init = function init() {
 // Game state
 
 var gameTime = 0;
-
-// Speed in pixels per second
-var playerSpeed = 200;
 
 // Update game objects
 function update(dt) {
