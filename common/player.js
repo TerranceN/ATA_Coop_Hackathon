@@ -6,8 +6,8 @@ var Entity = require('./entity');
 var playerColors = ['#44ff44', '#ff4444', '#4444ff', '#99cccc'];
 var playerNames = ['Highlighter', 'Red Baron', 'Blues Clues', 'Baby Blue'];
 var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(250, 260), new Vector2(200, 170), new Vector2(100, 400)]
-var playerSpeed = 30;
-var playerDamping = 6;
+var playerSpeed = 750;
+var playerDamping = 4;
 
 var hatSizes = [
     [28, 24],
@@ -162,7 +162,7 @@ Player.prototype.update = function (delta) {
         controlsDirection.y += this.downPressed ? 1 : 0;
         controlsDirection.x -= this.leftPressed ? 1 : 0;
         controlsDirection.x += this.rightPressed ? 1 : 0;
-        this.velocity = this.velocity.add(controlsDirection.getNormalized().scale(playerSpeed));
+        this.velocity = this.velocity.add(controlsDirection.getNormalized().scale(playerSpeed * delta));
     }
     this.position = this.position.add(this.velocity.scale(delta));
     this.checkCollisions(delta);
