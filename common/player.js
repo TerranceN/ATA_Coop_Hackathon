@@ -9,15 +9,15 @@ var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(
 var playerSpeed = 30;
 var playerDamping = 6;
 
-var Player = function (id, socket, isServer) {
+var Player = function (id, socket, isServer, io) {
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
-    this.targetOffset = new Vector2();
-    this.targetOffsetCount = 0;
     this.size = 15;
-    this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0, 1]);
+    this.hat = new Sprite('client/img/hats/hat' + id % 3 + '.png', [0, 0], [24, 24], [0]);
+    this.colliding = false
+    this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     //tracks player status. identity determines name and colour and can be changed
     this.alive = true;
@@ -28,13 +28,14 @@ var Player = function (id, socket, isServer) {
     this.downPressed = false;
     this.leftPressed = false;
     this.rightPressed = false;
+    this.attackPressed = false;
 
     if (typeof(socket) != 'undefined') {
         if (typeof(isServer) == 'undefined') {
             isServer = false;
         }
 
-        this.createListeners(socket, isServer);
+        this.createListeners(socket, isServer, io);
     }
 };
 
@@ -72,6 +73,13 @@ Player.prototype.setKey = function (event, status) {
         case 'D': {
             this.rightPressed = status;
         } break;
+        case 'Q': {
+            // Attack button was previously released and is now pressed.
+            if (status && !this.attackPressed) {
+                this.socket.emit("attack", {angle: this.angle});
+            }
+            this.attackPressed = status;
+        }
     }
 
     if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
@@ -79,7 +87,7 @@ Player.prototype.setKey = function (event, status) {
     }
 }
 
-Player.prototype.createListeners = function (socket, isServer) {
+Player.prototype.createListeners = function (socket, isServer, io) {
     var player = this;
     if (isServer) {
         socket.on('setKey', function (data) {
@@ -93,6 +101,14 @@ Player.prototype.createListeners = function (socket, isServer) {
                 player.rightPressed = data['status'];
             }
         });
+
+        socket.on('attack', function (data) {
+            player.angle = data['angle'];
+            if (io) {
+                io.sockets.emit('newEntity', {'position': player.position, 'angle':player.angle, 'type':Entity.ATTACK});
+            }
+        });
+
     } else {
         document.addEventListener('keydown', function(e) {
             player.setKey(e, true);
@@ -110,44 +126,6 @@ Player.prototype.createListeners = function (socket, isServer) {
         });
 
         document.addEventListener('mousemove', function (evt) {
-
-            /*
-            var totalOffsetX = 0;
-            var totalOffsetY = 0;
-            var canvasX = 0;
-            var canvasY = 0;
-            var currentElement = canvas;
-
-            do{
-                totalOffsetX += currentElement.offsetLeft - currentElement.scrollLeft;
-                totalOffsetY += currentElement.offsetTop - currentElement.scrollTop;
-            }
-            while(currentElement = currentElement.offsetParent)
-
-            canvasX = evt.pageX - totalOffsetX;
-            canvasY = evt.pageY - totalOffsetY;
-
-            player.mouseX = canvasX;
-            player.mouseY = canvasY;
-            */
-
-            /*
-            var canvas = document.getElementById('canvas');
-            var obj = canvas;
-            var top = 0;
-            var left = 0;
-            while (obj && obj.tagName != evt.target) {
-                top += obj.offsetTop;
-                left += obj.offsetLeft;
-                obj = obj.offsetParent;
-            }*/
-
-            // return relative mouse position
-            /*
-            player.mouseX = evt.clientX - left + window.pageXOffset;
-            player.mouseY = evt.clientY - top + window.pageYOffset;
-            */
-
             if (evt.target == canvas) {
                 if (evt.offsetX) {
                     mouse = new Vector2(evt.offsetX, evt.offsetY);
@@ -173,11 +151,23 @@ Player.prototype.update = function (delta) {
         this.velocity = this.velocity.add(controlsDirection.getNormalized().scale(playerSpeed));
     }
     this.position = this.position.add(this.velocity.scale(delta));
-    this.checkCollisions();
+    this.checkCollisions(delta);
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
+
+    if (this.targetOffsetCount < 6) {
+        this.targetOffsetCount += 1;
+    }
 }
 
-Player.prototype.checkCollisions = function () {
+Player.prototype.getSmoothedPosition = function () {
+    if (this.targetOffsetCount < 6) {
+        return this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
+    } else {
+        return this.position;
+    }
+}
+
+Player.prototype.checkCollisions = function (delta) {
 
     // Check collision with edge of map
     if(this.position.x < this.size) {
@@ -193,25 +183,40 @@ Player.prototype.checkCollisions = function () {
     if(this.position.y > world.height - this.size) {
         this.position.y = world.height - this.size;
     }
+
+    var minTileX = Math.max(0, Math.floor((this.position.x - this.size) / world.gridunit));
+    var maxTileX = Math.min(world.size.x - 1, Math.floor((this.position.x + this.size) / world.gridunit));
+    var minTileY = Math.max(0, Math.floor((this.position.y - this.size) / world.gridunit));
+    var maxTileY = Math.min(world.size.y - 1, Math.floor((this.position.y + this.size) / world.gridunit));
+
+    this.colliding = false;
+    // Check collision with objects in map
+    for (var i = minTileX; i <= maxTileX; ++i) {
+        for (var j = minTileY; j <= maxTileY; ++j) {
+            if (world.tiles[i][j] == 1) {
+                this.colliding = true;
+            }
+        }
+    }
 }
 
 Player.prototype.draw = function (canvas, ctx) {
-    /*if (this.targetOffsetCount < 6) {
-        var drawPos = this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
-        this.targetOffsetCount += 1;
-    } else {
-        var drawPos = this.position;
-    }*/
-    var drawPos = this.position;
+    var drawPos = this.getSmoothedPosition();
     
     // Render the player 
     ctx.beginPath();
     ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = playerColors[this.identity % playerColors.length];//"rgba(192, 255, 192, 1.0)";
+    if (this.colliding) {
+        ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
+    } else {
+        ctx.fillStyle = playerColors[this.id % playerColors.length];
+    }
     ctx.fill();
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#000000';
     ctx.stroke();
+
+    this.render(canvas, ctx);
 }
 
 Player.prototype.getIdentityInfo = function ( identity ){

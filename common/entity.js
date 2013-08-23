@@ -1,15 +1,34 @@
 var Sprite = require('./sprite');
 var Vector2 = require('./vector2');
 
-var Entity = function (sprite) {
-    this.position = new Vector2();
-    this.angle = 0;
+var ATTACK = 'attack';
+var PLAYER = 'player';
+
+var Entity = function (position, angle, type) {
+    this.position = position;
+    this.angle = angle;
     this.size = 15;
-    this.sprite = new Sprite('client/img/sprites.png', [0, 0], [39, 39], 16, [0]);
+    if (type == ATTACK) {
+	    this.sprite = new Sprite('client/img/attack.png', [0, 0], [64, 64], 30, [0, 1, 2, 3, 4], 'horizontal', true);
+	} 
+    this.targetOffset = new Vector2();
+    this.targetOffsetCount = 0;
+};
+
+Entity.ATTACK = ATTACK;
+Entity.PLAYER = PLAYER;
+
+Entity.prototype.updateAnimation = function (dt) {
+	this.sprite.update(dt);
 };
 
 Entity.prototype.render = function (canvas, ctx) {
-    var drawPos = this.position;
+    if (typeof(this.getSmoothedPosition) != 'undefined') {
+        var drawPos = this.getSmoothedPosition();
+    } else {
+        var drawPos = this.position;
+    }
+
     ctx.save();
     ctx.translate(drawPos.x, drawPos.y);
     ctx.rotate(this.angle);

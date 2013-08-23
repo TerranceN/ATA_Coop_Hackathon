@@ -4,6 +4,7 @@ var ioModule = require("socket.io");
 var io;
 
 var players = [];
+var entities = [];
 var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
@@ -14,7 +15,7 @@ var getNextPlayerId = function () {
 }
 
 var newPlayer = function (socket) {
-    var p = new Player(getNextPlayerId(), socket, true);
+    var p = new Player(getNextPlayerId(), socket, true, io);
     players.push(p);
     return p;
 }
@@ -58,12 +59,19 @@ var updatePlayers = function (dt) {
 }
 
 var sendPlayerUpdates = function () {
-    playerData = [];
+    var playerData = [];
+    var time = Date.now();
     for (var i = 0; i < players.length; i++) {
-        playerData.push({'id': players[i].id, 'position': players[i].position, 'velocity': players[i].velocity});
+        playerData.push({
+                'id': players[i].id,
+                'position': players[i].position,
+                'velocity': players[i].velocity,
+                'angle': players[i].angle});
     }
 
-    io.sockets.emit('playerUpdate', {'players': playerData});
+    io.sockets.emit('playerUpdate', {
+            'timestamp': time,
+            'players': playerData});
 }
 
 var gameLoop = function (lastTime) {
