@@ -26,6 +26,7 @@ canvas.id = 'canvas';
 canvas.width = 800;
 canvas.height = 600;
 document.body.appendChild(canvas);
+var cameraOffset;
 
 // The main game loop
 var lastTime;
@@ -127,40 +128,46 @@ function render() {
     ctx.setTransform(1,0,0,1,0,0);
 
     var canvasSize = new Vector2(canvas.width, canvas.height);
-    var screenOffset = canvasSize.scale(1/2).add(userPlayer.position.scale(-1));
+    var screenOffset = canvasSize.scale(1/2).add(userPlayer.getSmoothedPosition().scale(-1));
+    if (typeof(cameraOffset) == 'undefined') {
+        cameraOffset = screenOffset;
+    } else {
+        var difference = screenOffset.add(cameraOffset.scale(-1));
+        cameraOffset = cameraOffset.add(difference.scale(1/20));
+    }
 
-    //ctx.translate(screenOffset.x, screenOffset.y);
+    //ctx.translate(cameraOffset.x, cameraOffset.y);
 
     // Fill the screen gray (the out of bounds area)
     ctx.fillStyle = '#cccccc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Fill the area of the world that is in bounds as white
-    ctx.translate(screenOffset.x, screenOffset.y);
+    ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
     ctx.rect(0, 0, world.width, world.height);
     ctx.fillStyle = '#ffffff';
     ctx.fill();
 
-    // Draw a grid
+    //// Draw a grid
     ctx.setTransform(1,0,0,1,0,0);
-    var gridunit = 20;
-    ctx.beginPath();
-    for (var x = screenOffset.x % gridunit; x <= canvas.width; x += gridunit) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-    }
-    for (var y = screenOffset.y % gridunit; y <= canvas.height; y += gridunit) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-    }
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#999999';
-    ctx.stroke();
+    //var gridunit = 20;
+    //ctx.beginPath();
+    //for (var x = cameraOffset.x % gridunit; x <= canvas.width; x += gridunit) {
+    //    ctx.moveTo(x, 0);
+    //    ctx.lineTo(x, canvas.height);
+    //}
+    //for (var y = cameraOffset.y % gridunit; y <= canvas.height; y += gridunit) {
+    //    ctx.moveTo(0, y);
+    //    ctx.lineTo(canvas.width, y);
+    //}
+    //ctx.lineWidth = 1;
+    //ctx.strokeStyle = '#999999';
+    //ctx.stroke();
     
 
     // outline the edge of the world]
-    ctx.translate(screenOffset.x, screenOffset.y);
+    ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
     ctx.rect(0, 0, world.width, world.height);
     ctx.lineWidth = 3;

@@ -165,6 +165,18 @@ Player.prototype.update = function (delta) {
     this.position = this.position.add(this.velocity.scale(delta));
     this.checkCollisions();
     this.velocity = this.velocity.add(this.velocity.scale(-delta * playerDamping));
+
+    if (this.targetOffsetCount < 6) {
+        this.targetOffsetCount += 1;
+    }
+}
+
+Player.prototype.getSmoothedPosition = function () {
+    if (this.targetOffsetCount < 6) {
+        return this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
+    } else {
+        return this.position;
+    }
 }
 
 Player.prototype.checkCollisions = function () {
@@ -186,11 +198,7 @@ Player.prototype.checkCollisions = function () {
 } 
 
 Player.prototype.draw = function (canvas, ctx) {
-    if (this.targetOffsetCount < 6 && !this.socket) {
-        var drawPos = this.position.add(this.targetOffset.scale((6 - this.targetOffsetCount) / 6));
-    } else {
-        var drawPos = this.position;
-    }
+    var drawPos = this.getSmoothedPosition();
     
     // Render the player 
     ctx.beginPath();
