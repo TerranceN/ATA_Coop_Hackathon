@@ -321,6 +321,7 @@ World.prototype.createObjects = function() {
         var onPlayerSuccess = function (player) {
             player.items[Item.TYPES.objective].push(new Item(objectiveID, Item.TYPES.objective, null));
         }
+        return onPlayerSuccess;
     }
 	// Create rugs
 	var numRugs = 20;//Math.floor(Math.random() * 5 + 2);
