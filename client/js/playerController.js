@@ -24,13 +24,6 @@ Player.prototype.setKey = function (event, status) {
         case 'D': {
             this.rightPressed = status;
         } break;
-        case 'Q': {
-            // Attack button was previously released and is now pressed.
-            if (status && !this.attackPressed && this.alive) {
-                this.socket.emit("attack", {angle: this.angle});
-            }
-            this.attackPressed = status;
-        }
     }
 
     if (key == 'W' || key == 'A' || key == 'S' || key == 'D') {
@@ -39,7 +32,7 @@ Player.prototype.setKey = function (event, status) {
     }
 }
 
-Player.prototype.createListeners = function (socket, isServer, io) {
+Player.prototype.createListeners = function (socket, isServer) {
     var player = this;
     document.addEventListener('keydown', function(e) {
         player.setKey(e, true);
@@ -54,6 +47,10 @@ Player.prototype.createListeners = function (socket, isServer, io) {
         player.downPressed = false;
         player.leftPressed = false;
         player.rightPressed = false;
+    });
+
+    document.addEventListener('click', function (evt) {
+        player.socket.emit("attack", {angle: player.angle});
     });
 
     document.addEventListener('mousemove', function (evt) {
