@@ -23,7 +23,7 @@ Entity.prototype.updateAnimation = function (dt) {
 };
 
 Entity.prototype.render = function (canvas, ctx) {
-    if (typeof(this.getSmoothedPosition()) != 'undefined') {
+    if (typeof(this.getSmoothedPosition) != 'undefined') {
         var drawPos = this.getSmoothedPosition();
     } else {
         var drawPos = this.position;
