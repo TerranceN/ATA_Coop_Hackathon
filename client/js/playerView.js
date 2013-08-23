@@ -1,6 +1,5 @@
 var Player = require('../../common/player');
 var Vector2 = require('../../common/vector2');
-var world = require("../../common/world");
 var Sprite = require("../../common/sprite");
 
 Player.prototype.draw = function (canvas, ctx) {

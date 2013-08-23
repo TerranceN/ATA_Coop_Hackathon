@@ -22,7 +22,6 @@ var Player = function (id, socket, isServer) {
     this.visitedStructures = 0;
     this.hatId = Math.floor(Math.random() * hatSizes.length) + 1;
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
-    this.collisionTile = new Vector2(0,0);
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     //tracks player status. identity determines name and colour and can be changed
@@ -140,7 +139,6 @@ Player.prototype.checkCollisions = function (delta) {
     var j = Math.floor(this.position.y / this.world.gridunit);
     this.visitedStructures = this.visitedStructures | this.world.tiles[i][j].owner_id;
 
-    this.collisionTile = new Vector2(0,0);
     //COLLISION TEST
     var x2 = this.position.x + this.velocity.x * delta;
     var y2 = this.position.y + this.velocity.y * delta;
@@ -190,7 +188,6 @@ Player.prototype.checkCollisions = function (delta) {
             x2 = (newgx + 1) * gridunit + UR;
         }
         this.velocity.x = 0;
-        this.collisionTile = new Vector2(newgx, gy);
     }
 
     //vertical collision test
@@ -201,7 +198,6 @@ Player.prototype.checkCollisions = function (delta) {
             y2 = (newgy + 1) * gridunit + UR ;
         }
         this.velocity.y = 0;
-        this.collisionTile = new Vector2(gx, newgy);
     }
     //corner collision possible
     if (newgx != gx && newgy != gy && (this.world.tiles[newgx][newgy].id == 1)) {
@@ -246,7 +242,6 @@ Player.prototype.checkCollisions = function (delta) {
             //var dy:Number = y2 - this.y;
             //vx = dx / dt;
             //vy = dy / dt;
-            this.collisionTile = new Vector2(newgx,newgy);
         }
     }
 

@@ -197,9 +197,6 @@ function render() {
             } else if (userPlayer.world.tiles[i][j].id == -1) { // DEBUG
                 var tile_url = 'none';
             }
-            if (i == userPlayer.collisionTile.x && j == userPlayer.collisionTile.y) {
-                tile_url = 'client/img/water.png';
-            }
             if (tile_url != 'none') {
                 ctx.drawImage(resources.get(tile_url),
                   i*userPlayer.world.gridunit, j*userPlayer.world.gridunit,
@@ -216,14 +213,13 @@ function render() {
     ctx.strokeStyle = '#000000';
     ctx.stroke();
 
-    for (var i = 0; i < players.length; i++) {
-        players[i].draw(canvas, ctx);
-    }
+    userPlayer.world.draw(canvas, ctx);
     for (var i = 0; i < entities.length; i++) {
         entities[i].render(canvas, ctx);
     }
-
-    //world.draw(canvas, ctx);
+    for (var i = 0; i < players.length; i++) {
+        players[i].draw(canvas, ctx);
+    }
 
     ctx.setTransform(1,0,0,1,0,0);
 

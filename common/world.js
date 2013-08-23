@@ -46,8 +46,17 @@ World.prototype.make = function(other) {
 	this.width = other.width;
 	this.height = other.height;
 	this.rooms = other.rooms;
-	//this.searchables = other.searchables;
-	//this.numPlayers = other.numPlayers;
+
+	console.log(this.searchables);
+
+	this.searchables = new Array(other.searchables.length);
+	for (var i = 0; i < this.searchables.length; i++) {
+		this.searchables[i] = new Searchable(Searchable.RUG);
+		this.searchables[i].position = new Vector2(other.searchables[i].position.x, other.searchables[i].position.y);
+	}	
+	console.log(this.searchables);
+
+	this.numPlayers = other.numPlayers;
 
 	this.tiles = other.tiles;
 }
@@ -208,15 +217,16 @@ World.prototype.connect = function(roomA, roomB) {
 World.prototype.createObjects = function() {
 	console.log("create objects");
 	// Create rugs
-	var numRugs = 1;//Math.floor(Math.random() * 5 + 2);
+	var numRugs = 20;//Math.floor(Math.random() * 5 + 2);
 
 	for (var i = 0; i < numRugs; ++i) {
 		var rug = new Searchable(Searchable.RUG);
 
-		var room = this.rooms[0];
-
-		rug.position = this.toTileCoord(new Vector2(Math.floor(Math.random() * (room.bounds.width*this.gridunit - rug.size.x)),
-			Math.floor(Math.random() * (room.bounds.height*this.gridunit - rug.size.y))));
+		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
+		//this.toTileCoord(
+		//*this.gridunit - rug.size.x
+		rug.position = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
+			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit).add(rug.size.scale(1/2));
 		this.searchables.push(rug);
 	}
 
@@ -228,7 +238,7 @@ World.prototype.toTileCoord = function(position) {
 
 World.prototype.draw = function (canvas, ctx) {
 	for (var i = 0; i < this.searchables.length; ++i) {
-		console.log(this.searchables[i]);
+		console.log(this.searchables[i].position);
 		this.searchables[i].render(canvas, ctx);
 	}
 }
