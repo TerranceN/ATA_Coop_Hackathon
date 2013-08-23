@@ -11,7 +11,7 @@ var wall = 1;
 var nothing = 2;
 
 var World = function( numPlayers ) {
-    this.lastObjectID = 0;
+    this.lastObjectId = 0;
 	if (typeof(numPlayers) == 'undefined') {
 		numPlayers = 5;
 	}
@@ -37,10 +37,12 @@ var World = function( numPlayers ) {
 	this.generate();
 }
 
-World.prototype.getNextObjectID = function () {
-    this.lastObjectID++;
-    return this.lastObjectID;
+World.prototype.getNextObjectId = function () {
+    this.lastObjectId++;
+    return this.lastObjectId;
 }
+
+World.prototype.getObjectById = 
 
 World.prototype.getSpawn = function(){
 	return Vector2(10,10);
@@ -317,9 +319,9 @@ World.prototype.createObjects = function() {
     var allowPlayerInteraction = function (player) {
         return !player.interacting && player.items[Item.TYPES.objective].length < Item.MAX_OWN[Item.TYPES.objective];
     }
-    function generateOnPlayerSuccess (objectiveID) {
+    function generateOnPlayerSuccess (objectiveId) {
         var onPlayerSuccess = function (player) {
-            player.items[Item.TYPES.objective].push(new Item(objectiveID, Item.TYPES.objective, null));
+            player.items[Item.TYPES.objective].push(new Item(objectiveId, Item.TYPES.objective, null));
         }
         return onPlayerSuccess;
     }
