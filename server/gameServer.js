@@ -2,6 +2,7 @@ var Player = require("../common/player");
 require("./playerControlled");
 var Vector2 = require("../common/vector2")
 var World = require("../common/world");
+var GameManager = require("/gameManager");
 var ioModule = require("socket.io");
 var io;
 
@@ -11,6 +12,7 @@ var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
 var world = new World();
+var game = new GameManager();
 
 var getNextPlayerId = function () {
     lastPlayerId += 1;
@@ -85,6 +87,14 @@ var gameLoop = function (lastTime) {
     var now = Date.now();
     var dt = (now - lastTime) / 1000;
     dt = Math.min(dt, 1000/60);
+
+    //check game state conditions
+    game.checkState();
+    if (game.state != game.RUNNING && now - game.lastActive > 3000 ){
+        game.newGame();
+    }
+
+
     updatePlayers(dt);
 
     lastTime = now;
