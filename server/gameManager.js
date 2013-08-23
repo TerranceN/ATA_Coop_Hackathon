@@ -72,7 +72,6 @@ gameManager.prototype.newGame = function ( players ){
 gameManager.prototype.checkState = function ( players ) {
     if (this.state == this.RUNNING) {
         info = this.userCount( players );
-        console.log(info);
         if (info['all'] == 0) {
             this.endGame("Game Over: Doesn't seem like anyone wants to play.");
         }

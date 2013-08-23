@@ -136,7 +136,7 @@ Player.prototype.checkCollisions = function (delta, world) {
     // Track which rooms the user has been to
     var i = Math.floor(this.position.x / world.gridunit);
     var j = Math.floor(this.position.y / world.gridunit);
-    this.visitedStructures = this.visitedStructures | this.world.tiles[i][j].owner_id;
+    this.visitedStructures = this.visitedStructures | world.tiles[i][j].owner_id;
 
     //COLLISION TEST
     var x2 = this.position.x + this.velocity.x * delta;

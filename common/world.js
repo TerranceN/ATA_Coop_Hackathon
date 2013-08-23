@@ -302,7 +302,6 @@ World.prototype.toTileCoord = function(position) {
 
 World.prototype.draw = function (canvas, ctx) {
 	for (var i = 0; i < this.searchables.length; ++i) {
-		console.log(this.searchables[i].position);
 		this.searchables[i].render(canvas, ctx);
 	}
 }

@@ -60,10 +60,7 @@ var init = function init() {
     var socket = io.connect(document.URL);
     var newestMessageTime = 0;
     socket.on('connectionAccepted', function(data) {
-        console.log("connectionAccepted");
-        console.log(data['world']);
         if (typeof(data['world']) != 'undefined') {
-            console.log(data['world']);
             world.make(data['world']);
         }
         if (typeof(data['id']) != 'undefined') {
@@ -214,7 +211,7 @@ function render() {
     ctx.strokeStyle = '#000000';
     ctx.stroke();
 
-    userPlayer.world.draw(canvas, ctx);
+    world.draw(canvas, ctx);
     for (var i = 0; i < entities.length; i++) {
         entities[i].render(canvas, ctx);
     }
