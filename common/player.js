@@ -92,22 +92,17 @@ Player.prototype.update = function (delta, players, world, io) {
     this.velocity = this.velocity.add(this.velocity.scale(-delta * Player.DAMPING));
     
     var action;
+    var now;
     if (this.interacting) {
-        var now;
-        do {
+        action = true;
+        while (action && this.actionQueue.length) {
             action = this.actionQueue.shift();
-        } while (action && this.actionQueue.length);
-        if (!action) {
+        }
+        if (!action || Date.now() - this.interacting.startTime >= interactive.duration) {
+            var interactive = this.world.getObjectById(this.interacting.interactiveId);
             now = Date.now();
             interactive.endInteraction(this, now);
             this.interacting = false;
-        } else {
-            var interactive = this.world.getObjectById(this.interacting.interactiveId);
-            now = Date.now();
-            if (Date.now() - this.interacting.startTime >= interactive.duration) {
-                interactive.endInteraction(this, now);
-                this.interacting = false;
-            }
         }
     }
     if (this.actionQueue.length && !this.interacting) {
@@ -130,7 +125,7 @@ Player.prototype.update = function (delta, players, world, io) {
             }
             var idx, minIdx, minKey;
             minKey = Infinity;
-            for (idx = 0; idx < validInteractives.length; ++i) {
+            for (idx = 0; idx < validInteractives.length; ++idx) {
                 if (validInteractives[idx].key < minKey) {
                     minKey = validInteractives[idx].key;
                     minIdx = idx;
