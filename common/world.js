@@ -8,8 +8,8 @@ var wall = 1;
 var nothing = 2;
 
 var World = function() {
-	this.size = new Vector2(35, 35);
-	this.gridunit = 45;
+	this.size = new Vector2(55, 55);
+	this.gridunit = 35;
 
 	this.width = this.size.x * this.gridunit;
 	this.height = this.size.y * this.gridunit;
@@ -36,16 +36,18 @@ World.prototype.make = function(other) {
 	this.rooms = other.rooms;
 
 	this.tiles = other.tiles;
+
+	console.log(this);
 }
 
 World.prototype.generate = function() {
-	var maxSize = 10;
-	var minSize = 4;
+	var maxSize = 15;
+	var minSize = 9;
 	var radius = 10;
 
 	var i = 0;
 	var retries = 20;
-	var rooms = 20;
+	var rooms = 25;
 	for (i; i < rooms; ++i) {
 		var size = new Vector2(Math.floor(Math.random() * (maxSize - minSize) + minSize),
 						Math.floor(Math.random() * (maxSize - minSize) + minSize));
@@ -67,9 +69,11 @@ World.prototype.generate = function() {
 			for (var j = 0; j < size.x; ++j) {
 				for (var k = 0; k < size.y; ++k) {
 					if (j == 0 || k == 0 || j == size.x - 1 || k == size.y - 1) { // WALL
+						this.tiles[position.x + j][position.y + k] = 2;
+					} else if (j == 1 || k == 1 || j == size.x - 2 || k == size.y - 2) { // WALL
 						this.tiles[position.x + j][position.y + k] = 1;
 					} else { // FLOOR
-						this.tiles[position.x + j][position.y + k] = 0;
+						this.tiles[position.x + j][position.y + k] = 0;	
 					}
 				}
 			}
@@ -109,8 +113,11 @@ World.prototype.connectRooms = function() {
 			}
 		}
 
-		this.connect(roomA, closestNeighbour);
-		//this.connect(roomA, this.rooms[Math.floor(Math.random() * this.rooms.length)])
+		//this.connect(roomA, closestNeighbour);
+		var connections = Math.ceil(Math.random() * 2);
+		for (var i = 0; i < connections; ++i) {
+			this.connect(roomA, this.rooms[Math.floor(Math.random() * this.rooms.length)]);
+		}
 
 		unconnectedRooms.splice(0, 1);
 	}
@@ -123,21 +130,42 @@ World.prototype.connect = function(roomA, roomB) {
 	for (var i = roomA.center.x; xDir != 0 && (xDir == -1 ? i >= roomB.center.x : i <= roomB.center.x); i += xDir) {
 		this.tiles[i][roomA.center.y] = 0;
 		if (this.tiles[i][roomA.center.y - 1] == 2) {
-			this.tiles[i][roomA.center.y - 1] = 1; // WALL
+			if (this.tiles[i][roomA.center.y - 2] == 0) {
+				this.tiles[i][roomA.center.y - 1] = 0; // WALL	
+			} else {
+				this.tiles[i][roomA.center.y - 1] = 1; // WALL
+			}
 		}
 		if (this.tiles[i][roomA.center.y + 1] == 2) {
-			this.tiles[i][roomA.center.y + 1] = 1; // WALL
+			if (this.tiles[i][roomA.center.y + 2] == 0) {
+				this.tiles[i][roomA.center.y + 1] = 0; // WALL	
+			} else {
+				this.tiles[i][roomA.center.y + 1] = 1; // WALL
+			}
 		}
 	}
 	for (var i = roomA.center.y; yDir != 0 && (yDir == -1 ? i >= roomB.center.y : i <= roomB.center.y); i += yDir) {
 		this.tiles[roomB.center.x][i] = 0;
 		if (this.tiles[roomB.center.x - 1][i] == 2) {
-			this.tiles[roomB.center.x - 1][i] = 1; // WALL
+			if (this.tiles[roomB.center.x - 2][i] == 0) {
+				this.tiles[roomB.center.x - 1][i] = 0; // WALL	
+			} else {
+				this.tiles[roomB.center.x - 1][i] = 1; // WALL
+			}
 		}
 		if (this.tiles[roomB.center.x + 1][i] == 2) {
-			this.tiles[roomB.center.x + 1][i] = 1; // WALL
+			if (this.tiles[roomB.center.x + 2][i] == 0) {
+				this.tiles[roomB.center.x + 1][i] = 0; // WALL	
+			} else {
+				this.tiles[roomB.center.x + 1][i] = 1; // WALL
+			}
 		}
 	}
+
+	this.createObjects();
+}
+
+World.prototype.createObjects = function() {
 
 }
 
