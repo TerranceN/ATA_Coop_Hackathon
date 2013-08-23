@@ -14,7 +14,7 @@ var World = function( numPlayers ) {
 		numPlayers = 5;
 	}
 	this.size = new Vector2( numPlayers * 10, numPlayers * 10 );
-	this.gridunit = 5;
+	this.gridunit = 32;
 	this.lastStructureId = 1;
 	this.numPlayers = numPlayers;
 
