@@ -8,6 +8,9 @@ var wall = 1;
 var nothing = 2;
 
 var World = function( numPlayers ) {
+    if (typeof(numPlayers) == 'undefined') {
+        numPlayers = 7;
+    }
 	this.size = new Vector2( numPlayers * 10, numPlayers * 10 );
 	this.gridunit = 35;
 	this.numPlayers = numPlayers;
