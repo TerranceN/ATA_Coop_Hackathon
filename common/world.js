@@ -57,7 +57,7 @@ World.prototype.getSpawn = function(){
 }
 
 World.prototype.activeObjective = function (player) {
-    
+    return this.rooms[this.objectiveRoomIdx].bounds.contains(player.position);
 }
 
 World.prototype.make = function(other) {
@@ -133,7 +133,7 @@ World.prototype.generate = function() {
 		}
 	}
 
-	this.rooms.length = finalRooms;
+	this.objectiveRoomIdx = Utility.randIntInRange(0, this.rooms.length);
 
 	this.connectRooms();
 }

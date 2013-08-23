@@ -94,7 +94,7 @@ gameManager.prototype.checkState = function ( players ) {
             this.endGame("Game Over: The assassins are dead. Everyone is safe.");
         }*/
         if (this.objectiveCondition(players)) {
-            this.endGame("Game Over: the innocents have fulfilled their objective!");
+            this.endGame("Game Over: the \"good guys\" have fulfilled their objective!");
         }
     }
 }
@@ -124,7 +124,7 @@ gameManager.prototype.objectiveCondition = function (players) {
     var player;
     for (var i = 0; i < players.length; ++i) {
         player = players[i];
-        if (player.alive && player.role == this.ROLES.innocent && this.world.activeObjective(player)) {
+        if (player.alive && this.world.activeObjective(player)) {
             objectives += player.items[Item.TYPES.objective].length;
         }
     }

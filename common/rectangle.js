@@ -29,4 +29,9 @@ Rectangle.prototype.intersects = function(other) {
         this.y < (other.y + other.height) && (this.y + this.height) > other.y); 
 }
 
+Rectangle.prototype.contains = function (point) {
+    return (this.x <= point.x) && (point.x <= this.x + this.width) &&
+    (this.y <= point.y) && (point.y <= this.y + this.height);
+}
+
 module.exports = Rectangle;
