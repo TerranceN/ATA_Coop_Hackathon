@@ -8,13 +8,21 @@ var spawnPositions = [new Vector2(100, 100), new Vector2(300, 200), new Vector2(
 var playerSpeed = 30;
 var playerDamping = 6;
 
+var hatSizes = [
+    [28, 24],
+    [24, 29],
+    [28, 31],
+    [28, 25]
+]
+
 var Player = function (id, socket, isServer, io) {
     this.id = id;
     this.socket = socket;
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
     this.size = 15;
-    this.hat = new Sprite('client/img/hats/hat' + id % 3 + '.png', [0, 0], [24, 24], [0]);
+    this.hatId = 1;
+    this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
     this.colliding = false
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
@@ -201,6 +209,13 @@ Player.prototype.draw = function (canvas, ctx) {
     ctx.stroke();
 
     this.render(canvas, ctx);
+
+    ctx.save();
+    ctx.translate(drawPos.x, drawPos.y);
+    ctx.rotate(this.angle);
+    ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
+    this.hat.render(ctx);
+    ctx.restore();
 }
 
 module.exports = Player;

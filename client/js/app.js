@@ -167,7 +167,7 @@ function render() {
 
     // Draw a grid
     ctx.setTransform(1,0,0,1,0,0);
-    ctx.beginPath();
+    /*ctx.beginPath();
     for (var x = screenOffset.x % world.gridunit; x <= canvas.width; x += world.gridunit) {
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
@@ -178,7 +178,7 @@ function render() {
     }
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#999999';
-    ctx.stroke();
+    ctx.stroke();*/
 
     // outline the edge of the world]
     ctx.translate(screenOffset.x, screenOffset.y);

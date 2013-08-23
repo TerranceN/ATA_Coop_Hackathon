@@ -9,7 +9,7 @@ var nothing = 2;
 
 var World = function() {
 	this.size = new Vector2(35, 35);
-	this.gridunit = 32;
+	this.gridunit = 45;
 
 	this.width = this.size.x * this.gridunit;
 	this.height = this.size.y * this.gridunit;
@@ -29,13 +29,13 @@ var World = function() {
 }
 
 World.prototype.generate = function() {
-	var maxSize = 8;
+	var maxSize = 10;
 	var minSize = 4;
 	var radius = 10;
 
 	var i = 0;
 	var retries = 20;
-	var rooms = 5;
+	var rooms = 20;
 	for (i; i < rooms; ++i) {
 		var size = new Vector2(Math.floor(Math.random() * (maxSize - minSize) + minSize),
 						Math.floor(Math.random() * (maxSize - minSize) + minSize));
