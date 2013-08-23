@@ -74,11 +74,11 @@ var sendPlayerUpdates = function () {
     for (var i = 0; i < players.length; i++) {
         player = players[i];
         items = []
-        for (var i = 0; i < player.items.length; ++i) {
+        for (var k = 0; k < player.items.length; ++k) {
             items.push([]);
-            for (var j = 0; j < player.items[i].length; ++j) {
-                item = player.items[i][j];
-                items[i].push({"id":item.id, "type":item.type});
+            for (var j = 0; j < player.items[k].length; ++j) {
+                item = player.items[k][j];
+                items[k].push({"id":item.id, "type":item.type});
             }
         }
         playerData.push({
