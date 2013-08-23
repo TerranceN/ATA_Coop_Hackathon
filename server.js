@@ -3,7 +3,7 @@ var http = require("http"),
     path = require("path"),
     fs = require("fs"),
     gameServer = require("./server/gameServer"),
-    port = process.argv[2] || 8888;
+    port = process.env.PORT || parseInt(process.argv[2]) || 8888;
 
 var app = http.createServer(function(request, response) {
 
@@ -44,7 +44,7 @@ var app = http.createServer(function(request, response) {
         });
 });
 
-app.listen(parseInt(port, 10));
+app.listen(port);
 
 gameServer.init(app);
 
