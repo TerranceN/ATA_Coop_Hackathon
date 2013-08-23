@@ -38,7 +38,7 @@ var Player = function (id, socket, isServer) {
     this.rightPressed = false;
     this.attackPressed = false;
     this.world = new World();
-    this.attackFrame = true;
+    this.attackFrame = false; //set to true whe nthe user attacks to indicate it needs to do a hitTest
 
     if (typeof(socket) != 'undefined') {
         if (typeof(isServer) == 'undefined') {
@@ -98,7 +98,7 @@ Player.prototype.setKey = function (event, status) {
         } break;
         case 'Q': {
             // Attack button was previously released and is now pressed.
-            if (status && !this.attackPressed) {
+            if (status && !this.attackPressed && this.alive) {
                 this.socket.emit("attack", {angle: this.angle});
             }
             this.attackPressed = status;
@@ -177,23 +177,22 @@ Player.prototype.update = function (delta, players, io) {
     if (this.attackFrame) {
         // Player just attacked. see if he hit anything.
         this.attackFrame = false;
-        //hit test
+        //hit test (server only, client positions are unreliable)
         if (io) {
-            io.sockets.emit('newEntity', {'position': player.position, 'angle':player.angle, 'type':Entity.ATTACK});
-        }
-        for (var i = 0; i < players.length; i++) {
-            var player2 = players[i].id;
-            if (player2 != this.id) {
-                var attack_range = 40; // + player size
-                var attack_arc = 60;
-                var posDiff = player2.position.add(this.position.scale(-1));
-                var angleDiff = Math.atan2(posDiff);
-                if (posDiff.length() < attack_range) {
-                    angleDiff = angleLessThanPI(angleDiff - player.angle);
-                    //the second player should be within a 60 degree angle difference of the direction this player is facing
-                    if (Math.abs(angleDiff) < Math.PI / 3) {
-                        player2.alive = false;
-                        io.sockets.emit('newEntity', {'position': player2.position, 'angle':player2.angle, 'type':Entity.CORPSE});
+            io.sockets.emit('newEntity', {'position': this.position, 'angle':this.angle, 'type':Entity.ATTACK});
+            for (var i = 0; i < players.length; i++) {
+                var player2 = players[i];
+                if (player2.id != this.id && player2.alive) {
+                    var attack_range = 40; // + player size
+                    var attack_arc = 60;
+                    var posDiff = player2.position.add(this.position.scale(-1));
+                    if (posDiff.length() < attack_range) {
+                        var angleDiff = Math.atan2(posDiff.y, posDiff.x);
+                        //the second player should be within a 60 degree angle difference of the direction this player is facing
+                        if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 3) {
+                            player2.alive = false;
+                            io.sockets.emit('newEntity', {'position': player2.position, 'angle':angleDiff, 'type':Entity.CORPSE});
+                        }
                     }
                 }
             }
@@ -251,7 +250,7 @@ Player.prototype.draw = function (canvas, ctx) {
     // Render the player 
     ctx.beginPath();
     ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    if (this.colliding) {
+    if (this.colliding && this.alive) {
         ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
         ctx.fill();
     } else if (this.alive) {
@@ -268,7 +267,9 @@ Player.prototype.draw = function (canvas, ctx) {
     ctx.translate(drawPos.x, drawPos.y);
     ctx.rotate(this.angle);
     ctx.translate(- this.hat.size[0]/2 - 5, - this.hat.size[1]/2);
-    this.hat.render(ctx);
+    if (this.alive) { 
+        this.hat.render(ctx);
+    }
     ctx.restore();
 }
 
