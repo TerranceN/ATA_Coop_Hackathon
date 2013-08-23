@@ -1,5 +1,6 @@
 var Player = require("../common/player");
 require("./playerControlled");
+var Vector2 = require("../common/vector2")
 var World = require("../common/world");
 var ioModule = require("socket.io");
 var io;
@@ -18,6 +19,8 @@ var getNextPlayerId = function () {
 
 var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
+    p.world = world;
+    p.spawn(world.getRandomSpawnPos());
     players.push(p);
     p.world = world;
     return p;

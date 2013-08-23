@@ -189,11 +189,11 @@ function render() {
     for (var i = 0; i < userPlayer.world.size.x; ++i) {
         for (var j = 0; j < userPlayer.world.size.y; ++j) {
             var tile_url = 'client/img/grass.png';
-            if (userPlayer.world.tiles[i][j] == 0) { // ground
+            if (userPlayer.world.tiles[i][j].id == 0) { // ground
                 var tile_url = 'client/img/road.png';
-            } else if (userPlayer.world.tiles[i][j] == 1) { // wall
+            } else if (userPlayer.world.tiles[i][j].id == 1) { // wall
                 var tile_url = 'client/img/wall.png';
-            } else if (userPlayer.world.tiles[i][j] == -1) { // DEBUG
+            } else if (userPlayer.world.tiles[i][j].id == -1) { // DEBUG
                 var tile_url = 'none';
             }
             if (i == userPlayer.collisionTile.x && j == userPlayer.collisionTile.y) {
@@ -222,6 +222,8 @@ function render() {
         entities[i].render(canvas, ctx);
     }
 
+    userPlayer.world.draw(canvas, ctx);
+
     ctx.setTransform(1,0,0,1,0,0);
 
     // Draw minimap
@@ -229,14 +231,14 @@ function render() {
     for (var i = 0; i < userPlayer.world.size.x; ++i) {
         for (var j = 0; j < userPlayer.world.size.y; ++j) {
             var color = 'none';
-            if (userPlayer.world.tiles[i][j] == 0) { // ground
+            if (userPlayer.world.tiles[i][j].id == 0) { // ground
                 color = '#8E5A26';
-            } else if (userPlayer.world.tiles[i][j] == 1) { // wall
+            } else if (userPlayer.world.tiles[i][j].id == 1) { // wall
                 color  = '#171717';
-            } else if (userPlayer.world.tiles[i][j] == -1) { // DEBUG
+            } else if (userPlayer.world.tiles[i][j].id == -1) { // DEBUG
                 color = '#FFFFFF';
             }
-            if (color != 'none') {
+            if (color != 'none' && (userPlayer.visitedStructures & userPlayer.world.tiles[i][j].owner_id)) {
                 ctx.fillStyle = color;
                 ctx.fillRect(i*minimapTileSize, j*minimapTileSize, minimapTileSize, minimapTileSize);
             }
@@ -273,6 +275,7 @@ resources.load([
     'client/img/water.png',
     'client/img/grass.png',
     'client/img/wall.png',
-    'client/img/attack.png'
+    'client/img/attack.png',
+    'client/img/rug.png'
 ]);
 resources.onReady(init);
