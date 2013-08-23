@@ -1,5 +1,6 @@
 var Player = require("../common/player");
 require("./playerControlled");
+var Vector2 = require("../common/vector2")
 var World = require("../common/world");
 var ioModule = require("socket.io");
 var io;
@@ -18,7 +19,10 @@ var getNextPlayerId = function () {
 
 var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
+    p.world = world;
+    p.spawn(world.getRandomSpawnPos());
     players.push(p);
+    p.world = world;
     return p;
 }
 
@@ -80,7 +84,7 @@ var sendPlayerUpdates = function () {
 var gameLoop = function (lastTime) {
     var now = Date.now();
     var dt = (now - lastTime) / 1000;
-
+    dt = Math.min(dt, 1000/60);
     updatePlayers(dt);
 
     lastTime = now;
