@@ -15,7 +15,7 @@ var World = function( numPlayers ) {
 	if (typeof(numPlayers) == 'undefined') {
 		numPlayers = 5;
 	}
-	this.size = new Vector2( numPlayers * 10, numPlayers * 10 );
+	this.size = new Vector2( numPlayers * 12, numPlayers * 12 );
 	this.gridunit = 32;
 	this.lastStructureId = 1;
 	this.numPlayers = numPlayers;
@@ -84,11 +84,10 @@ World.prototype.make = function(other) {
 World.prototype.generate = function() {
 	var maxSize = 13;
 	var minSize = 8;
-	var radius = 10;
 
 	var i = 0;
 	var finalRooms = 0;
-	var retries = this.numPlayers * 10;
+	var retries = this.numPlayers * 15;
 	var rooms = this.numPlayers * 6;
 	for (i; i < rooms; ++i) {
 		var size = new Vector2(Math.floor(Math.random() * (maxSize - minSize) + minSize),
@@ -314,7 +313,7 @@ World.prototype.createObjects = function() {
 		var pos = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
 			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit);
 
-		var rug = new Searchable(this.getNextObjectId(), pos, 0, Searchable.CRATE, 3000);
+		var rug = new Searchable(this.getNextObjectId(), pos, 0, Searchable.CRATE);
 		rug.position = rug.position.add(rug.size.scale(1/2));
 
 		this.searchables.push(rug);

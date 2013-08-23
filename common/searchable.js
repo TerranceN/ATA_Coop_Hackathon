@@ -20,7 +20,7 @@ var Searchable = function(id, position, angle, type, duration) {
     /* The duration in milliseconds for which we allow a user to interact with us
      * OR the duration in milliseconds it takes for the interaction to succeed
      */
-    this.duration = duration || 3000;
+    this.duration = duration || 2500;
     this.type = type;
     this.size = new Vector2();
     if (this.type == RUG) {
@@ -46,8 +46,7 @@ var Searchable = function(id, position, angle, type, duration) {
      * their particular begin interaction timestamps.
      */
     this.interactions = [];
-    this.items = [];
-
+    this.contains = 1;
 
     this.beginInteraction = idleBeginInteraction;
     this.endInteraction = idleEndInteraction;
@@ -81,20 +80,16 @@ var idleEndInteraction = function (player, time) {}
 var allowPlayerInteraction = function (player) {
     return !player.interacting && player.items[Item.TYPES.objective].length < Item.MAX_OWN[Item.TYPES.objective];
 }
-function generateOnPlayerSuccess (objectiveID) {
+function generateOnPlayerSuccess (objectiveId) {
     var onPlayerSuccess = function (player) {
-        player.items[Item.TYPES.objective].push(new Item(objectiveID, Item.TYPES.objective, null));
+    	console.log("GOT AN ITEM!!!")
+        for (var i = 0; i < this.contains; i++) {
+		    player.items[Item.TYPES.objective].push(new Item(objectiveId, Item.TYPES.objective, null));
+	    }
+        this.contains = 0;
     }
     return onPlayerSuccess;
 }
-Searchable.prototype.make = function(other) {
-	this.id = other.id;
-	this.position = new Vector2(other.position.x, other.position.y);
-	this.angle = other.angle;
-	this.type = other.type;
-	this.duration = other.duration;
-}
-
 Searchable.RUG = RUG;
 Searchable.CRATE = CRATE;
 Searchable.CORPSE = CORPSE;
@@ -102,6 +97,15 @@ Searchable.TABLE = TABLE;
 
 Searchable.prototype = new Entity();        // Set prototype to Person's
 Searchable.prototype.constructor = Searchable;
+
+Searchable.prototype.make = function(other) {
+	this.id = other.id;
+	this.position = new Vector2(other.position.x, other.position.y);
+	this.angle = other.angle;
+	this.type = other.type;
+	this.duration = other.duration;
+	this.contains = other.contains;
+}
 
 Searchable.prototype.beginInteraction = function (player, time) {
     /* @param player: a Player object - the player who seeks to interact with us
