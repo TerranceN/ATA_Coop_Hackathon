@@ -194,24 +194,7 @@ function render() {
             }
         }
     }
-
-    ctx.fillStyle = '#ffffff';
-
-    // Draw a grid
-    ctx.setTransform(1,0,0,1,0,0);
-    /*ctx.beginPath();
-    for (var x = screenOffset.x % world.gridunit; x <= canvas.width; x += world.gridunit) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-    }
-    for (var y = screenOffset.y % world.gridunit; y <= canvas.height; y += world.gridunit) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-    }
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#999999';
-    ctx.stroke();*/
-
+    
     // outline the edge of the world]
     //ctx.translate(cameraOffset.x, cameraOffset.y);
     ctx.beginPath();
