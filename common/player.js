@@ -13,7 +13,8 @@ var hatSizes = [
     [28, 24],
     [24, 29],
     [28, 31],
-    [28, 25]
+    [28, 25],
+    [24, 29]
 ]
 
 var Player = function (id, socket, isServer) {
@@ -22,7 +23,8 @@ var Player = function (id, socket, isServer) {
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
     this.size = 15;
-    this.hatId = Math.floor(Math.random() * 4) + 1;
+    this.visitedStructures = 0;
+    this.hatId = 4;//Math.floor(Math.random() * hatSizes.length) + 1;
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
     this.colliding = false
     this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
@@ -87,6 +89,9 @@ Player.prototype.setHatId = function(hatId) {
     this.hat = new Sprite('client/img/hats/hat' + this.hatId + '.png', [0, 0], hatSizes[this.hatId - 1], 1, [0]);
 }
 
+Player.prototype.spawn = function(position) {
+    this.position = position
+}
 
 Player.prototype.update = function (delta, players, io) {
     this.velocity = this.velocity.add(this.controlForce.getNormalized().scale(Player.SPEED * delta));
@@ -158,7 +163,8 @@ Player.prototype.checkCollisions = function (delta) {
     // Check collision with objects in map
     for (var i = minTileX; i <= maxTileX; ++i) {
         for (var j = minTileY; j <= maxTileY; ++j) {
-            if (this.world.tiles[i][j] == 1) {
+            this.visitedStructures = this.visitedStructures | this.world.tiles[i][j].owner_id;
+            if (this.world.tiles[i][j].id == 1) {
                 this.colliding = true;
             }
         }
