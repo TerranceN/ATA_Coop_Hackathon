@@ -2,7 +2,7 @@ var Player = require("../common/player");
 require("./playerControlled");
 var Vector2 = require("../common/vector2")
 var World = require("../common/world");
-var GameManager = require("/gameManager");
+var GameManager = require("./gameManager");
 var ioModule = require("socket.io");
 var io;
 
@@ -12,7 +12,7 @@ var lastPlayerId = 0;
 var lastUpdateTime = Date.now();
 var updatesPerSecond = 10;
 var world = new World();
-var game = new GameManager();
+var game;
 
 var getNextPlayerId = function () {
     lastPlayerId += 1;
@@ -107,6 +107,7 @@ var gameLoop = function (lastTime) {
 module.exports.init = function (app) {
     io = ioModule.listen(app);
     io.set('log level', 1); // reduce logging
+    game = new GameManager(io);
     initConnectionHandler();
     gameLoop(Date.now());
 }

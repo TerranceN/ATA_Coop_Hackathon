@@ -1,14 +1,16 @@
 
 var World = require("../common/world");
 minPlayers = 3;
+var io;
 
-var gameManager = function () {
+var gameManager = function (IOin) {
     this.state = 0;
     this.gamePlayers = [];
     this.gameAssassins = [];
     this.gameStart = 0;
     this.lastActive = Date.now();
     this.world = new World();
+    io = IOin;
 };
 
 
@@ -49,7 +51,7 @@ gameManager.prototype.newGame = function ( players ){
         numAssassin = int(activeplayers.length * 0.2);
         if(numAssassin < 1){ numAssassin = 1;}
         while (this.gameAssassins.length < numAssassin && tries < 100){
-            picked = int(Math.random() * );
+            picked = int(Math.random() * activeplayers.length);
             if (activeplayers[picked].role != 1){
                 activeplayers[picked].role = 1;
                 activeplayers[picked].socket.emit('gamemessage', {'message': "You are an assassin this round!"});
@@ -61,7 +63,7 @@ gameManager.prototype.newGame = function ( players ){
         this.state = this.RUNNING;
         this.gameStart = Date.now();
     } else {
-    this.state = WAITINGFORPLAYERS;
+    this.state = this.WAITINGFORPLAYERS;
     this.lastActive = Date.now();
     io.sockets.emit('gamemessage', {'message': "Waiting for more players..."})
     }
