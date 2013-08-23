@@ -1,12 +1,10 @@
 
 var World = require("../common/world");
-minPlayers = 3;
+minPlayers = 2;
 var io;
 
 var gameManager = function (IOin) {
     this.state = 0;
-    this.gamePlayers = [];
-    this.gameAssassins = [];
     this.gameStart = 0;
     this.lastActive = Date.now();
     this.world = new World();
@@ -21,41 +19,43 @@ gameManager.prototype.RUNNING = 2;
 gameManager.prototype.newGame = function ( players ){
     //count up number of players who want to play
     activeplayers = [];
-    for (player in players){
-        if (player.nextGame){
-            activeplayers.push(player);
+    for (var x = 0; x < players.length; x++){
+        if (players[x].nextGame){
+            activeplayers.push(players[x]);
         }
     }
     
     if (activeplayers.length > minPlayers){
         //generate world and inform players
+        console.log("generating world");
         this.world = new World(activeplayers.length);
-        io.sockets.emit('newgame', {'world': world});
+        io.sockets.emit('newgame', {'world': this.world});
         io.sockets.emit('gamemessage', {'message': 'New game started!'});
-        this.gameplayers = activeplayers;
 
         //assign identities to players
         startidentity = 0;
-        for (player in activeplayers){
-            player.active = true;
-            player.socket.leave('spectator');
-            player.position = World.getSpawn();
-            player.identity = startidentity;
-            info = player.getIdentityInfo();
-            player.socket.emit('gamemessage', {'message': "You are <span style='color:" + data['color'] + ";'>" + data['name'] + "</span>"});
+        for (var x = 0; x < players.length; x++){
+            players[x].alive = true;
+            players[x].socket.leave('spectator');
+            players[x].position = this.world.getRandomSpawnPos();
+            players[x].identity = startidentity;
+            players[x].role = 0;
+            info = players[x].getIdentityInfo();
+            players[x].socket.emit('gamemessage', {'message': "You are <span style='color:" + info['color'] + ";'>" + info['name'] + "</span>"});
+            startidentity++;
         }
 
-        //choose players to be assasins
-        tries = 0;
-        this.assassinCount = 0;
-        numAssassin = int(activeplayers.length * 0.2);
+        //choose players to be assassins
+        var tries = 0;
+        var assassinCount = 0;
+        numAssassin = Math.floor(activeplayers.length * 0.2);
         if(numAssassin < 1){ numAssassin = 1;}
-        while (this.gameAssassins.length < numAssassin && tries < 100){
-            picked = int(Math.random() * activeplayers.length);
+        while (assassinCount < numAssassin && tries < 100){
+            picked = Math.floor(Math.random() * activeplayers.length);
             if (activeplayers[picked].role != 1){
                 activeplayers[picked].role = 1;
                 activeplayers[picked].socket.emit('gamemessage', {'message': "You are an assassin this round!"});
-                this.gameAssassins.push(activeplayers[picked]);
+                assassinCount++;
             }
             tries++;
         }
@@ -69,18 +69,39 @@ gameManager.prototype.newGame = function ( players ){
     }
 }
 
-gameManager.prototype.checkState = function () {
+gameManager.prototype.checkState = function ( players ) {
     if (this.state == this.RUNNING) {
-        if (this.gamePlayers.length - this.gameAssassins.length <= 0){
-            this.endGame("Game Over: The assassin's have killed everyone else.")
+        info = this.userCount( players );
+        console.log(info);
+        if (info['all'] == 0) {
+            this.endGame("Game Over: Doesn't seem like anyone wants to play.");
         }
-        // add winstate for non-assassins
+        if (info['player'] - info['assassin'] <= 0){
+            this.endGame("Game Over: The assassins have killed everyone else.");
+        }
+        if (info['assassin'] == 0){
+            this.endGame("Game Over: The assassins are dead. Everyone is safe.");
+        }
     }
 }
 
+gameManager.prototype.userCount = function ( players ) {
+    info = {'all':0, 'player':0, 'assassin':0};
+    for (var x=0; x<players.length; x++) {
+        if (players[x].alive) {
+            if (players[x].role == 1) {
+                info['assassin']++;
+            }
+            info['player']++;
+        }
+        info['all']++;
+    }
+    return info;
+}
+
 gameManager.prototype.endGame = function ( message ) {
-    this.state == this.GAMEOVER;
     this.lastActive = Date.now();
+    this.state = this.GAMEOVER;
     io.sockets.emit('gamemessage', {'message': message});
 }
 

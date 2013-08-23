@@ -21,10 +21,8 @@ var getNextPlayerId = function () {
 
 var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
-    p.world = world;
     p.spawn(world.getRandomSpawnPos());
     players.push(p);
-    p.world = world;
     return p;
 }
 
@@ -56,7 +54,7 @@ var initConnectionHandler = function () {
 
 var updatePlayers = function (dt) {
     for (var i = 0; i < players.length; i++) {
-        players[i].update(dt, players, io);
+        players[i].update(dt, players, world, io);
     }
 
     var now = Date.now();
@@ -89,9 +87,9 @@ var gameLoop = function (lastTime) {
     dt = Math.min(dt, 1000/60);
 
     //check game state conditions
-    game.checkState();
+    game.checkState( players );
     if (game.state != game.RUNNING && now - game.lastActive > 3000 ){
-        game.newGame();
+        game.newGame( players );
     }
 
 

@@ -35,10 +35,6 @@ var World = function( numPlayers ) {
 	this.generate();
 }
 
-World.prototype.getSpawn = function(){
-	return Vector2(10,10);
-}
-
 World.prototype.make = function(other) {
 	this.size = other.size;
 	this.gridunit = other.gridunit;
