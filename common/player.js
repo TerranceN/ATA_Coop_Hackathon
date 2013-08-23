@@ -168,7 +168,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
                         if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 3) {
                             player2.alive = false;
                             player2.socket.join('spectator');
-                            var corpse = new Searchable(world.getNextObjectID(), player2.position, angleDiff, Searchable.CORPSE);
+                            var corpse = new Searchable(world.getNextObjectId(), player2.position, angleDiff, Searchable.CORPSE);
                             world.searchables.push(corpse);
                             io.sockets.emit('newEntity', {'id':corpse.id, 'position': corpse.position, 'angle':corpse.angle, 'type':Searchable.CORPSE});
                         }
