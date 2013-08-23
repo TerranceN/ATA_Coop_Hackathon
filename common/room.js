@@ -7,6 +7,7 @@ var Room = function(bounds) {
 	this.connected = false;
 	this.searchables = new Array();
 	this.center = new Vector2(this.bounds.x + Math.floor(this.bounds.width/2), this.bounds.y + Math.floor(this.bounds.height/2));
+	this.structureId = 0;
 }
 
 Room.prototype.distance = function(other) {

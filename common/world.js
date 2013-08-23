@@ -14,7 +14,7 @@ var World = function( numPlayers ) {
 		numPlayers = 5;
 	}
 	this.size = new Vector2( numPlayers * 10, numPlayers * 10 );
-	this.gridunit = 35;
+	this.gridunit = 32;
 	this.lastStructureId = 1;
 	this.numPlayers = numPlayers;
 
@@ -46,21 +46,30 @@ World.prototype.make = function(other) {
 	this.width = other.width;
 	this.height = other.height;
 	this.rooms = other.rooms;
-	//this.searchables = other.searchables;
-	//this.numPlayers = other.numPlayers;
+
+	console.log(this.searchables);
+
+	this.searchables = new Array(other.searchables.length);
+	for (var i = 0; i < this.searchables.length; i++) {
+		this.searchables[i] = new Searchable(Searchable.RUG);
+		this.searchables[i].position = new Vector2(other.searchables[i].position.x, other.searchables[i].position.y);
+	}	
+	console.log(this.searchables);
+
+	this.numPlayers = other.numPlayers;
 
 	this.tiles = other.tiles;
 }
 
 World.prototype.generate = function() {
 	var maxSize = 15;
-	var minSize = 9;
+	var minSize = 10;
 	var radius = 10;
 
 	var i = 0;
 	var finalRooms = 0;
-	var retries = this.numPlayers * 4;
-	var rooms = this.numPlayers * 5;
+	var retries = this.numPlayers * 10;
+	var rooms = this.numPlayers * 6;
 	for (i; i < rooms; ++i) {
 		var size = new Vector2(Math.floor(Math.random() * (maxSize - minSize) + minSize),
 						Math.floor(Math.random() * (maxSize - minSize) + minSize));
@@ -81,6 +90,7 @@ World.prototype.generate = function() {
 			this.rooms.push(room);
 			finalRooms++;
 			var structureId = this.getStructureId();
+			room.structureId = structureId;
 			for (var j = 0; j < size.x; ++j) {
 				for (var k = 0; k < size.y; ++k) {
 					if (j == 0 || k == 0 || j == size.x - 1 || k == size.y - 1) { // NOTHING
@@ -146,26 +156,35 @@ World.prototype.connectRooms = function() {
 		unconnectedRooms.splice(0, 1);
 	}
 
-	this.createObjects();
+	this.secondPass();
 }
 
 World.prototype.connect = function(roomA, roomB) {
 	var xDir = Utility.sign(roomB.center.x - roomA.center.x);
 	var yDir = Utility.sign(roomB.center.y - roomA.center.y);
 
+	var earlyBreak = false;
 	var structureId = this.getStructureId();
 	for (var i = roomA.center.x; xDir != 0 && (xDir == -1 ? i >= roomB.center.x : i <= roomB.center.x); i += xDir) {
 		if (this.tiles[i][roomA.center.y].id != 0) {
 			this.tiles[i][roomA.center.y] = new Tile(0); // GROUND
 			this.tiles[i][roomA.center.y].owner_id = structureId;	
-		}
-		if (this.tiles[i][roomA.center.y - 1].id == 2) {
-			if (this.tiles[i][roomA.center.y - 2].id == 0) {
-				this.tiles[i][roomA.center.y - 1] = new Tile(0); // GROUND
-				this.tiles[i][roomA.center.y - 1].owner_id = structureId; 
+		} //else if (this.tiles[i][roomA.center.y].owner_id != roomA.structureId) {
+			//earlyBreak = true;
+		//}
+		if (this.tiles[i][roomA.center.y - 1].id != 0) {
+			this.tiles[i][roomA.center.y - 1] = new Tile(0); // GROUND
+			this.tiles[i][roomA.center.y - 1].owner_id = structureId;	
+		} //else if (this.tiles[i][roomA.center.y - 1].owner_id != roomA.structureId) {
+			//earlyBreak = true;
+		//}
+		if (this.tiles[i][roomA.center.y - 2].id == 2) {
+			if (this.tiles[i][roomA.center.y - 3].id == 0) {
+				this.tiles[i][roomA.center.y - 2] = new Tile(0); // GROUND
+				this.tiles[i][roomA.center.y - 2].owner_id = structureId; 
 			} else {
-				this.tiles[i][roomA.center.y - 1] = new Tile(1); // WALL
-				this.tiles[i][roomA.center.y - 1].owner_id = structureId; 
+				this.tiles[i][roomA.center.y - 2] = new Tile(1); // WALL
+				this.tiles[i][roomA.center.y - 2].owner_id = structureId; 
 			}
 		}
 		if (this.tiles[i][roomA.center.y + 1].id == 2) {
@@ -177,46 +196,105 @@ World.prototype.connect = function(roomA, roomB) {
 				this.tiles[i][roomA.center.y + 1].owner_id = structureId; 
 			}
 		}
+		if (earlyBreak) {
+			break;
+		}
 	}
-	structureId = this.getStructureId();
-	for (var i = roomA.center.y; yDir != 0 && (yDir == -1 ? i >= roomB.center.y : i <= roomB.center.y); i += yDir) {
-		if (this.tiles[roomB.center.x][i].id != 0) {
-			this.tiles[roomB.center.x][i] = new Tile(0); // GROUND	
-			this.tiles[roomB.center.x][i].owner_id = structureId;	
-		}
-		if (this.tiles[roomB.center.x - 1][i].id == 2) {
-			if (this.tiles[roomB.center.x - 2][i].id == 0) {
+	if (!earlyBreak) {
+		structureId = this.getStructureId();
+		for (var i = roomA.center.y; yDir != 0 && (yDir == -1 ? i >= roomB.center.y : i <= roomB.center.y); i += yDir) {
+			if (this.tiles[roomB.center.x][i].id != 0) {
+				this.tiles[roomB.center.x][i] = new Tile(0); // GROUND	
+				this.tiles[roomB.center.x][i].owner_id = structureId;	
+			} //else if (this.tiles[roomB.center.x][i].owner_id != roomA.structureId) {
+				//earlyBreak = true;
+			//}
+			if (this.tiles[roomB.center.x - 1][i].id != 0) {
 				this.tiles[roomB.center.x - 1][i] = new Tile(0); // GROUND	
-				this.tiles[roomB.center.x - 1][i].owner_id = structureId; 	
-			} else {
-				this.tiles[roomB.center.x - 1][i] = new Tile(1); // WALL
-				this.tiles[roomB.center.x - 1][i].owner_id = structureId; 
+				this.tiles[roomB.center.x - 1][i].owner_id = structureId;	
+			} //else if (this.tiles[roomB.center.x - 1][i].owner_id != roomA.structureId) {
+				//earlyBreak = true;
+			//}
+			if (this.tiles[roomB.center.x - 2][i].id == 2) {
+				if (this.tiles[roomB.center.x - 3][i].id == 0) {
+					this.tiles[roomB.center.x - 2][i] = new Tile(0); // GROUND	
+					this.tiles[roomB.center.x - 2][i].owner_id = structureId; 	
+				} else {
+					this.tiles[roomB.center.x - 2][i] = new Tile(1); // WALL
+					this.tiles[roomB.center.x - 2][i].owner_id = structureId; 
+				}
 			}
-		}
-		if (this.tiles[roomB.center.x + 1][i].id == 2) {
-			if (this.tiles[roomB.center.x + 2][i].id == 0) {
-				this.tiles[roomB.center.x + 1][i] = new Tile(0); // GROUND		
-				this.tiles[roomB.center.x + 1][i].owner_id = structureId; 
-			} else {
-				this.tiles[roomB.center.x + 1][i] = new Tile(1); // WALL
-				this.tiles[roomB.center.x + 1][i].owner_id = structureId;
+			if (this.tiles[roomB.center.x + 1][i].id == 2) {
+				if (this.tiles[roomB.center.x + 2][i].id == 0) {
+					this.tiles[roomB.center.x + 1][i] = new Tile(0); // GROUND		
+					this.tiles[roomB.center.x + 1][i].owner_id = structureId; 
+				} else {
+					this.tiles[roomB.center.x + 1][i] = new Tile(1); // WALL
+					this.tiles[roomB.center.x + 1][i].owner_id = structureId;
+				}
+			}
+			if (earlyBreak) {
+				break;
 			}
 		}
 	}
 }
 
+World.prototype.secondPass = function() {
+
+	for (var i = 1; i < this.size.x - 1; ++i) {
+		for (var j = 1; j < this.size.y - 1; ++j) {
+			// Make sure floor tiles have proper wall tiles
+			if (this.tiles[i][j].id == 0) {
+				if (this.tiles[i - 1][j].id == 2) {
+					this.tiles[i - 1][j].id = 1;
+				}
+				if (this.tiles[i + 1][j].id == 2) {
+					this.tiles[i + 1][j].id = 1;
+				}
+				if (this.tiles[i][j - 1].id == 2) {
+					this.tiles[i][j - 1].id = 1;
+				}
+				if (this.tiles[i][j + 1].id == 2) {
+					this.tiles[i][j + 1].id = 1;
+				}
+				if (this.tiles[i - 1][j - 1].id == 2) {
+					this.tiles[i - 1][j - 1].id = 1;
+				}
+				if (this.tiles[i + 1][j + 1].id == 2) {
+					this.tiles[i + 1][j + 1].id = 1;
+				}
+				if (this.tiles[i - 1][j + 1].id == 2) {
+					this.tiles[i - 1][j + 1].id = 1;
+				}
+				if (this.tiles[i + 1][j - 1].id == 2) {
+					this.tiles[i + 1][j - 1].id = 1;
+				}
+			} else if (this.tiles[i][j] == 1) { // Remove useless walls
+				if ((this.tiles[i - 1][j].id == 0 && this.tiles[i + 1][j].id == 0) ||
+					(this.tiles[i][j - 1].id == 0 && this.tiles[i][j + 1].id == 0)) {
+					this.tiles[i][j].id = 0;
+					console.log("remove dat shit");
+				}
+			}
+		}
+	}
+
+	this.createObjects();
+}
+
 World.prototype.createObjects = function() {
-	console.log("create objects");
 	// Create rugs
-	var numRugs = 1;//Math.floor(Math.random() * 5 + 2);
+	var numRugs = 20;//Math.floor(Math.random() * 5 + 2);
 
 	for (var i = 0; i < numRugs; ++i) {
 		var rug = new Searchable(Searchable.RUG);
 
-		var room = this.rooms[0];
-
-		rug.position = this.toTileCoord(new Vector2(Math.floor(Math.random() * (room.bounds.width*this.gridunit - rug.size.x)),
-			Math.floor(Math.random() * (room.bounds.height*this.gridunit - rug.size.y))));
+		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
+		//this.toTileCoord(
+		//*this.gridunit - rug.size.x
+		rug.position = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
+			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit).add(rug.size.scale(1/2));
 		this.searchables.push(rug);
 	}
 
@@ -228,7 +306,7 @@ World.prototype.toTileCoord = function(position) {
 
 World.prototype.draw = function (canvas, ctx) {
 	for (var i = 0; i < this.searchables.length; ++i) {
-		console.log(this.searchables[i]);
+		console.log(this.searchables[i].position);
 		this.searchables[i].render(canvas, ctx);
 	}
 }

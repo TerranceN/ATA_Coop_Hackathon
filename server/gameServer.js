@@ -20,7 +20,7 @@ var getNextPlayerId = function () {
 }
 
 var newPlayer = function (socket) {
-    var p = new Player(getNextPlayerId(), socket, true, io);
+    var p = new Player(getNextPlayerId(), socket, true);
     p.world = world;
     p.spawn(world.getRandomSpawnPos());
     players.push(p);
@@ -46,7 +46,7 @@ var initConnectionHandler = function () {
                 io.sockets.emit('chat', message);
             } else {
                 message['name'] = "Spectator" + player.id;
-                message['color'] = ""
+                message['color'] = "";
                 console.log(message);
                 io.sockets.in('spectator').emit('chat', message);
             }
