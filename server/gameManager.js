@@ -48,6 +48,7 @@ gameManager.prototype.newGame = function ( players ){
                 players[x].role = 0;
                 players[x].visitedStructures = 0;
                 info = players[x].getIdentityInfo();
+                console.log("init player ", players[x].id);
                 players[x].socket.emit('gamemessage', {'message': "You are <span style='color:" + info['color'] + ";'>" + info['name'] + "</span>"});
                 startidentity++;
             }
@@ -83,7 +84,7 @@ gameManager.prototype.newGame = function ( players ){
 
 gameManager.prototype.checkState = function ( players ) {
     info = this.userCount( players );
-    console.log( this.state, info );
+    //console.log( this.state, info );
     if (this.state == this.RUNNING) {
         if (info['all'] == 0) {
             this.endGame("Game Over: Doesn't seem like anyone wants to play.");

@@ -28,7 +28,6 @@ var Player = function (id, socket, isServer) {
     this.alive = false;
 
     this.identity = id;
-    console.log(this.identity);
     this.role = 0;
     this.nextGame = true;
     this.gameID = 0;

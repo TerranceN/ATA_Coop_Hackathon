@@ -22,7 +22,6 @@ var newPlayer = function (socket) {
     var p = new Player(getNextPlayerId(), socket, true, io);
     p.spawn(game.world.getRandomSpawnPos());
     players.push(p);
-    console.log(p);
     return p;
 }
 
@@ -92,6 +91,7 @@ var sendPlayerUpdates = function () {
                 'items': items});
     }
 
+    console.log(playerData);
     io.sockets.emit('playerUpdate', {
             'timestamp': time,
             'players': playerData,
