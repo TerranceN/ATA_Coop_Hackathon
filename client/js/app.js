@@ -2,9 +2,11 @@ var Player = require('../../common/player');
 var Vector2 = require('../../common/vector2');
 var world = require("../../common/world");
 var Sprite = require("../../common/sprite");
+var Entity = require("../../common/entity");
 
 var userPlayer;
 var players = [];
+var entities = [];
 
 // A cross-browser requestAnimationFrame
 // See https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
@@ -70,6 +72,10 @@ var init = function init() {
                                 players[j].velocity.y = thisPlayerUpdate['velocity'].y;
                                 players[j].targetOffset = oldPosition.add(players[j].position.scale(-1))
                                 players[j].targetOffsetCount = 0;
+                                // The angle of the current player is decided by his mouse position rather than the server.
+                                if (id != userPlayer.id) {
+                                    players[j].angle = thisPlayerUpdate['angle'];
+                                }
                                 foundPlayer = true;
                             }
                         }
@@ -96,6 +102,9 @@ var init = function init() {
                 }
             });
 
+            socket.on('newEntity', function (data) {
+                entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
+            });
             main();
         }
     });
@@ -113,21 +122,15 @@ function update(dt) {
     gameTime += dt;
 
     updateEntities(dt);
-
-    checkCollisions();
 };
 
 function updateEntities(dt) {
     for (var i = 0; i < players.length; i++) {
         players[i].update(dt);
     }
-}
-
-function checkCollisions() {
-    checkPlayerBounds();
-}
-
-function checkPlayerBounds() {
+    for (var i = 0; i < entities.length; i++) {
+        entities[i].updateAnimation(dt);
+    }
 }
 
 // Draw everything
@@ -184,6 +187,9 @@ function render() {
     for (var i = 0; i < players.length; i++) {
         players[i].draw(canvas, ctx);
     }
+    for (var i = 0; i < entities.length; i++) {
+        entities[i].render(canvas, ctx);
+    }
 
     ctx.setTransform(1,0,0,1,0,0);
 };
@@ -191,6 +197,7 @@ function render() {
 resources.load([
     'client/img/sprites.png',
     'client/img/terrain.png',
-    'client/img/player1.png'
+    'client/img/player1.png',
+    'client/img/attack.png'
 ]);
 resources.onReady(init);
