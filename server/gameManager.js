@@ -52,6 +52,8 @@ gameManager.prototype.newGame = function ( players ){
                 players[x].identity = startidentity;
                 players[x].role = 0;
                 players[x].visitedStructures = 0;
+                //reset items for the player
+                players[x].items = [[],[],[],[]];
                 info = players[x].getIdentityInfo();
                 console.log("init player ", players[x].id);
                 players[x].socket.emit('gamemessage', {'message': "You are <span style='color:" + info['color'] + ";'>" + info['name'] + "</span>"});

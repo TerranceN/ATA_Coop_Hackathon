@@ -95,7 +95,7 @@ var init = function init() {
                                 var itemdata = thisPlayerUpdate['items'];
                                 for (var k = 0; k < itemdata.length; ++k) {
                                     players[j].items.push([]);
-                                    for (var m = 0; m < itemdata[k].length; ++j) {
+                                    for (var m = 0; m < itemdata[k].length; ++m) {
                                         item = itemdata[k][m];
                                         players[j].items[k].push({"id":item.id, "type":item.type});
                                     }
