@@ -58,6 +58,7 @@ Player.prototype.setKey = function (event, status) {
         if (key in {'W':null, ',':null, 'A':null, 'S':null, 'O':null, 'D':null, 'E':null}) {
             this.controlForce = new Vector2(this.rightPressed - this.leftPressed, this.downPressed - this.upPressed).getNormalized();
             this.socket.emit('controlForce', this.controlForce);
+            this.actionQueue.push(false);
         }
     }
 }
@@ -82,6 +83,7 @@ Player.prototype.createListeners = function (socket, isServer) {
     document.addEventListener('click', function (evt) {
         if (player.alive) {
             player.socket.emit("attack", {angle: player.angle});
+            player.actionQueue.push(false);
         }
     });
 
