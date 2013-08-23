@@ -44,7 +44,7 @@ var Searchable = function(id, position, angle, type, duration) {
      * their particular begin interaction timestamps.
      */
     this.interactions = [];
-    this.contains = (Math.floor(Math.random() * 4) == 0 ? 1 : 0);
+    this.contains = (Math.floor(Math.random() * 3) == 0 ? 1 : 0);
 
     this.beginInteraction = idleBeginInteraction;
     this.endInteraction = idleEndInteraction;
