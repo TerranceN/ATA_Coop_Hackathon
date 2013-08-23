@@ -14,7 +14,8 @@ var Player = function (id, socket, isServer, io) {
     this.position = spawnPositions[id % spawnPositions.length];
     this.velocity = new Vector2();
     this.size = 15;
-    this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0, 1]);
+    this.colliding = false
+    this.sprite = new Sprite('client/img/player1.png', [0, 0], [32, 32], 1, [0]);
 
     this.controlsDirection = new Vector2();
     this.upPressed = false;
@@ -167,11 +168,12 @@ Player.prototype.checkCollisions = function (delta) {
     var minTileY = Math.max(0, Math.floor((this.position.y - this.size) / world.gridunit));
     var maxTileY = Math.min(world.size.y - 1, Math.floor((this.position.y + this.size) / world.gridunit));
 
+    this.colliding = false;
     // Check collision with objects in map
     for (var i = minTileX; i <= maxTileX; ++i) {
         for (var j = minTileY; j <= maxTileY; ++j) {
             if (world.tiles[i][j] == 1) {
-                this.size = 5;
+                this.colliding = true;
             }
         }
     }
@@ -187,7 +189,11 @@ Player.prototype.draw = function (canvas, ctx) {
     // Render the player 
     ctx.beginPath();
     ctx.arc(drawPos.x, drawPos.y, this.size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = playerColors[this.id % playerColors.length];//"rgba(192, 255, 192, 1.0)";
+    if (this.colliding) {
+        ctx.fillStyle = "rgba(64, 64, 64, 1.0)";
+    } else {
+        ctx.fillStyle = playerColors[this.id % playerColors.length];
+    }
     ctx.fill();
     ctx.lineWidth = 1;
     ctx.strokeStyle = '#000000';
