@@ -276,8 +276,8 @@ function render() {
     ctx.fillRect(playerTile.x*minimapTileSize, playerTile.y*minimapTileSize, minimapTileSize, minimapTileSize);
 
     // Draw inventory
-    ctx.fillStyle = "#FBDB0C";
-    ctx.fillRect(0, cavas.height - 100, canvas.width, 100);
+    ctx.fillStyle = "#222222";
+    ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
 
 };
 

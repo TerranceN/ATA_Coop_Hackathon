@@ -300,12 +300,12 @@ World.prototype.createObjects = function() {
 	console.log("create objects");
     world = this;
 	// Create rugs
-	var numRugs = 5;//Math.floor(Math.random() * 5 + 2);
+	var numRugs = 25;//Math.floor(Math.random() * 5 + 2);
 
 	for (var i = 0; i < numRugs; ++i) {
 		var room = this.rooms[Math.floor(Math.random() * this.rooms.length)];
-		var pos = new Vector2(room.bounds.x + Math.floor(Math.random() * room.bounds.width),
-			room.bounds.y + Math.floor(Math.random() * room.bounds.height)).scale(this.gridunit);
+		var pos = new Vector2(room.bounds.x + 1 + Math.floor(Math.random() * (room.bounds.width - 2)),
+			room.bounds.y + 1 + Math.floor(Math.random() * (room.bounds.height - 2))).scale(this.gridunit);
 
 		var rug = new Searchable(this.getNextObjectId(), pos, 0, Searchable.CRATE, 3000);
 		rug.position = rug.position.add(rug.size.scale(1/2));
