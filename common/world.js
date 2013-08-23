@@ -4,6 +4,7 @@ var Room = require('./room');
 var Utility = require('./utility');
 var Tile = require('./tile');
 var Searchable = require('./searchable');
+var Item = require('./item');
 
 var ground = 0;
 var wall = 1;
@@ -223,20 +224,36 @@ World.prototype.createObjects = function() {
         if (this.allowPLayerInteraction(player)) {
             this.interactions.push({player:player, startTime:time});
             this.beginInteraction = searchingBeginInteraction;
+            this.endInteraction = searchingEndInteraction;
         }
+        return true;
     }
     var searchingEndInteraction = function (player, time) {
+        if (player.id != this.interactions[0].player.id) {
+            return;
+        }
         interaction = interactions.shift();
         if (time - interaction.startTime >= this.duration) {
             this.onPlayerSuccess(interaction.player);
         }
+        this.beginInteraction = idleBeginInteraction;
+        this.endInteraction = idleEndInteraction;
     }
-    var onPlayerSuccess = function (player) {
-        
+    var idleEndInteraction = function (player, time) {}
+    var allowPlayerInteraction = function (player) {
+        return !player.interacting && player.items[Item.TYPES.objective].length < Item.MAX_OWN[Item.TYPES.objective];
+    }
+    function generateOnPlayerSuccess (objectiveID) {
+        var onPlayerSuccess = function (player) {
+            player.items[Item.TYPES.objective].push(new Item(objectiveID, Item.TYPES.objective, null));
+        }
     }
 	for (var i = 0; i < numRugs; ++i) {
 		var rug = new Searchable(this.getNextObjectID, Searchable.RUG, 3000);
-        
+        rug.beginInteraction = idleBeginInteraction;
+        rug.endInteraction = idleEndInteraction;
+        rug.allowPlayerInteraction = allowPlayerInteraction;
+        rug.onPlayerSuccess = generateOnPlayerSuccess(i);
         
 
 		var room = this.rooms[0];
