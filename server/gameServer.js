@@ -91,7 +91,6 @@ var sendPlayerUpdates = function () {
                 'items': items});
     }
 
-    console.log(playerData);
     io.sockets.emit('playerUpdate', {
             'timestamp': time,
             'players': playerData,
@@ -107,7 +106,6 @@ var gameLoop = function (lastTime) {
     game.checkState( players );
     if (game.state != game.RUNNING && now - game.lastActive > 3000 ){
         game.newGame( players );
-        console.log("calling newgame");
     }
 
     updatePlayers(dt);
