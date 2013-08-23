@@ -328,7 +328,7 @@ Player.prototype.checkCollisions = function (delta, world) {
     } 
 };
 
-Player.prototype.stopInteracting(interactive) {
+Player.prototype.stopInteracting = function (interactive) {
     if (this.interacting) {
         interactive = interactive === undefined ? this.world.getObjectById(this.interacting.interactiveId) : interactive;
         interactive.endInteraction(this, Date.now())
