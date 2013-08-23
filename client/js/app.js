@@ -222,7 +222,7 @@ function render() {
         entities[i].render(canvas, ctx);
     }
 
-    userPlayer.world.draw(canvas, ctx);
+    world.draw(canvas, ctx);
 
     ctx.setTransform(1,0,0,1,0,0);
 
