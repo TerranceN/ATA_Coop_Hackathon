@@ -97,26 +97,20 @@ var webgl = (function() {
 
     var defaultProgram;
     var allOrNothingProgram;
-    var shadowMapProgram;
-    var shadowRenderProgram;
     var testProgram;
     var distanceProgram;
     var reductionProgram;
     var makeShadowsProgram;
-    var textureNoResizeProgram;
 
     function initShaders() {
         vertexShaderName = "shader-vs";
 
         defaultProgram = makeShader(vertexShaderName, "shader-fs");
         allOrNothingProgram = makeShader(vertexShaderName, "allOrNothing");
-        shadowMapProgram = makeShader(vertexShaderName, "shadowMap");
-        shadowRenderProgram = makeShader(vertexShaderName, "shadowRender");
         testProgram = makeShader(vertexShaderName, "test");
         distanceProgram = makeShader(vertexShaderName, "distance");
         reductionProgram = makeShader(vertexShaderName, "reduction");
         makeShadowsProgram = makeShader(vertexShaderName, "makeShadows");
-        textureNoResizeProgram = makeShader(vertexShaderName, "textureNoResize");
 
         setShader(defaultProgram);
     }
@@ -150,6 +144,7 @@ var webgl = (function() {
     var mvMatrix = mat4.create();
     var mvMatrixStack = [];
     var pMatrix = mat4.create();
+    var pMatrixStack = [];
 
     function mvPushMatrix() {
         var copy = mat4.create();
@@ -164,6 +159,18 @@ var webgl = (function() {
         mvMatrix = mvMatrixStack.pop();
     }
 
+    function pPushMatrix() {
+        var copy = mat4.create();
+        mat4.set(pMatrix, copy);
+        pMatrixStack.push(copy);
+    }
+
+    function pPopMatrix() {
+        if (pMatrixStack.length == 0) {
+            throw "Invalid popMatrix!";
+        }
+        pMatrix = pMatrixStack.pop();
+    }
 
     function setMatrixUniforms() {
         gl.uniformMatrix4fv(gl.getUniformLocation(currentShader, "uPMatrix"), false, pMatrix);
@@ -367,38 +374,39 @@ var webgl = (function() {
     }
 
     function drawFBO(fbo) {
-        pMatrix = mat4.ortho(0, fbo.width, fbo.height, 0, -1.0, 1.0);
-        gl.viewport(0, 0, fbo.width, fbo.height);
+        pPushMatrix();
+            pMatrix = mat4.ortho(0, fbo.width, fbo.height, 0, -1.0, 1.0);
+            gl.viewport(0, 0, fbo.width, fbo.height);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexPositionBuffer);
-        gl.vertexAttribPointer(currentShader.vertexAttribLocation, fbo.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexPositionBuffer);
+            gl.vertexAttribPointer(currentShader.vertexAttribLocation, fbo.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexTextureCoordBuffer);
-        gl.vertexAttribPointer(currentShader.textureAttribLocation, fbo.vertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+            gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexTextureCoordBuffer);
+            gl.vertexAttribPointer(currentShader.textureAttribLocation, fbo.vertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
-        gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
-        gl.uniform2f(gl.getUniformLocation(currentShader, "resolution"), fbo.width, fbo.height);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+            gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
+            gl.uniform2f(gl.getUniformLocation(currentShader, "resolution"), fbo.width, fbo.height);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fbo.vertexIndexBuffer);
-        setMatrixUniforms();
-        gl.drawElements(gl.TRIANGLES, fbo.vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fbo.vertexIndexBuffer);
+            setMatrixUniforms();
+            gl.drawElements(gl.TRIANGLES, fbo.vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+        pPopMatrix();
     }
 
-    var transX = 0;
-    var transY = 0;
+    var transX = 100;
+    var transY = 100;
 
     function drawScene() {
         mvMatrix = mat4.identity(mvMatrix);
 
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(allOrNothingProgram);
         mvPushMatrix();
             mat4.translate(mvMatrix, [transX, transY, 0]);
-
-            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
-            gl.clearColor(0.0, 0.0, 0.0, 0.0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-            setShader(allOrNothingProgram);
             drawNeHeLogo();
         mvPopMatrix();
 
@@ -429,6 +437,7 @@ var webgl = (function() {
         drawFBO(fbo1);
 
         mvPushMatrix();
+            mat4.identity(mvMatrix);
             mat4.translate(mvMatrix, [transX, transY, 0]);
             drawNeHeLogo();
         mvPopMatrix();
@@ -508,13 +517,27 @@ var webgl = (function() {
     //    tick();
     //}
     //
-    window.onmousemove = function (e) {
-        transX = e.clientX;
-        transY = e.clientY;
-        gl.uniform2f(gl.getUniformLocation(currentShader, "mousePos"), e.clientX, e.clientY);
-    }
 
     function loadCanvasToTexture() {
+    }
+
+    function relMouseCoords(event, elem){
+        var totalOffsetX = 0;
+        var totalOffsetY = 0;
+        var canvasX = 0;
+        var canvasY = 0;
+        var currentElement = elem;
+
+        do{
+            totalOffsetX += currentElement.offsetLeft;
+            totalOffsetY += currentElement.offsetTop;
+        }
+        while(currentElement = currentElement.offsetParent)
+
+        canvasX = event.pageX - totalOffsetX;
+        canvasY = event.pageY - totalOffsetY;
+
+        return {x:canvasX, y:canvasY}
     }
 
     function webglInit() {
@@ -523,12 +546,22 @@ var webgl = (function() {
         canvas.height = 600;
         var target = document.getElementById("canvas-box");
         target.appendChild(canvas);
+
+        canvas.onmousemove = function (e) {
+            var coords = relMouseCoords(e, canvas);
+            transX = coords.x;
+            transY = coords.y;
+            console.log("mousePos: " + coords.x + ", " + coords.y);
+            //gl.uniform2f(gl.getUniformLocation(currentShader, "lightPos"), e.clientX, e.clientY);
+        }
+
         initGL(canvas);
         initShaders();
         initBuffers();
         fbo1 = newFBO(gl.viewportWidth, gl.viewportHeight);
         fbo2 = newFBO(gl.viewportWidth, gl.viewportHeight);
         initReductionSteps();
+        initTexture();
 
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
@@ -536,11 +569,11 @@ var webgl = (function() {
     }
 
     function webglDraw(createLightBlockerImage, createFinalImage) {
-        createLightBlockerImage();
+        //createLightBlockerImage();
 
         // generate mask
 
-        createFinalImage();
+        //createFinalImage();
 
         // use mask to mask final image
     }
