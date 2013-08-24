@@ -19,7 +19,7 @@
 
       <div id="score"></div>
       <div id="main">
-        <div id="canvas-box"></div>
+          <div id="canvas-box"><canvas id="canvas"></canvas></div>
         <div id="chatbox">
           <div id="chatoutput"></div>
           <input type="text" id="chatinput"></input>
@@ -30,6 +30,345 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="client/js/resources.js"></script>
+    <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/glMatrix-0.9.5.min.js"></script>
+    <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/webgl-utils.js"></script>
+    <script id="makeShadows" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+        uniform vec2 mousePos;
+
+        float GetShadowDistanceH() {
+            float u = vTexCoord0.x;
+            float v = vTexCoord0.y;
+
+            u = abs(u-0.5) * 2.0;
+            v = v * 2.0 - 1.0;
+            float v0 = v/u;
+            v0 = (v0 + 1.0) / 2.0;
+
+            vec4 color = texture2D(uSampler, vec2((vTexCoord0.x<0.5?0.0:1.0) / resolution.x, v0));
+
+            return color.r;
+        }
+
+        float GetShadowDistanceV() {
+            float u = vTexCoord0.y;
+            float v = vTexCoord0.x;
+
+            u = abs(u-0.5) * 2.0;
+            v = v * 2.0 - 1.0;
+            float v0 = v/u;
+            v0 = (v0 + 1.0) / 2.0;
+
+            vec4 color = texture2D(uSampler, vec2((vTexCoord0.y<0.5?0.0:1.0) / resolution.x, v0));
+
+            return color.g;
+        }
+
+        void main(void) {
+            // distance of this pixel from the center
+            float distance = length(vTexCoord0 - vec2(0.5, 0.5));
+
+            //distance stored in the shadow map
+            float shadowMapDistance;
+            //coords in [-1,1]
+            float nY = 2.0*( vTexCoord0.y - 0.5);
+            float nX = 2.0*( vTexCoord0.x - 0.5);
+
+            //we use these to determine which quadrant we are in
+            if(abs(nY)<abs(nX))
+            {
+                shadowMapDistance = GetShadowDistanceH();
+            }
+            else
+            {
+                shadowMapDistance = GetShadowDistanceV();
+            }
+
+            //if distance to this pixel is lower than distance from shadowMap,
+            //then we are not in shadow
+            float light = distance < shadowMapDistance ? 1.0:0.0;
+            //float light = vTexCoord0.x > shadowMapDistance ? 1.0:0.0;
+            vec4 result = vec4(light);
+            result.a = 1.0;
+            gl_FragColor = result;
+        }
+    </script>
+
+    <script id="reduction" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        // width / 2
+        uniform float size;
+
+        void main(void) {
+            float fractionalSize = size / resolution.x;
+            if (vTexCoord0.x <= fractionalSize / 2.0) {
+                vec4 color = texture2D(uSampler, vTexCoord0);
+                vec4 otherColor = texture2D(uSampler, vec2(vTexCoord0.x + fractionalSize / 2.0, vTexCoord0.y));
+
+                float resultRed = min(color.r, otherColor.r);
+                float resultGreen = min(color.g, otherColor.g);
+
+                gl_FragColor = vec4(resultRed, resultGreen, 0.0, 1.0);
+            } else if (vTexCoord0.x <= fractionalSize) {
+                vec4 color = texture2D(uSampler, vec2(vTexCoord0.x + fractionalSize / 2.0, vTexCoord0.y));
+                vec4 otherColor = texture2D(uSampler, vec2(vTexCoord0.x + fractionalSize, vTexCoord0.y));
+
+                float resultRed = min(color.r, otherColor.r);
+                float resultGreen = min(color.g, otherColor.g);
+
+                gl_FragColor = vec4(resultRed, resultGreen, 0.0, 1.0);
+            } else {
+                gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+            }
+        }
+    </script>
+
+    <script id="distance" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        void main(void) {
+            vec4 color = texture2D(uSampler, vTexCoord0);
+            if (color.a > 0.1) {
+                float distance = length(vTexCoord0 - 0.5);
+                gl_FragColor = vec4(0.0,0.0,0.0, distance);
+            } else {
+                gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+            }
+            //compute distance from center
+            //save it to the Red channel
+        }
+    </script>
+
+    <script id="test" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        void main(void) {
+            //translate u and v into [-1 , 1] domain
+            float u0 = vTexCoord0.x * 2.0 - 1.0;
+            float v0 = vTexCoord0.y * 2.0 - 1.0;
+
+            //then, as u0 approaches 0 (the center), v should also approach 0
+            float u1 = u0 * abs(v0);
+            float v1 = v0 * abs(u0);
+            //convert back from [-1,1] domain to [0,1] domain
+            u1 = (u1 + 1.0) / 2.0;
+            v1 = (v1 + 1.0) / 2.0;
+
+            //read for both horizontal and vertical direction and store them in separate channels
+
+            float horizontal = texture2D(uSampler, vec2(vTexCoord0.x, v1)).a;
+            float vertical = texture2D(uSampler, vec2(v1, vTexCoord0.x)).a;
+
+            gl_FragColor = vec4(horizontal, vertical, 0.0, 1.0);
+        }
+    </script>
+
+    <!-- taken from https://gist.github.com/mattdesl/5286905 -->
+    <script id="shadowRender" type="x-shader/x-fragment">
+        #ifdef GL_ES
+        #define LOWP lowp
+        precision mediump float;
+        #else
+        #define LOWP
+        #endif
+
+        #define PI 3.14
+        varying vec2 vTexCoord0;
+        varying LOWP vec4 vColor;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        uniform float softShadows;
+
+        //sample from the distance map
+        float sample(vec2 coord, float r) {
+          return step(r, texture2D(uSampler, coord).r);
+        }
+
+        void main(void) {
+            //rectangular to polar
+            vec2 norm = vTexCoord0.st * 2.0 - 1.0;
+            float theta = atan(norm.y, norm.x);
+            float r = length(norm);	
+            float coord = (theta + PI) / (2.0*PI);
+
+            //the tex coord to sample our 1D lookup texture	
+            //always 0.0 on y axis
+            vec2 tc = vec2(coord, 0.0);
+
+            //the center tex coord, which gives us hard shadows
+            float center = sample(vec2(tc.x, tc.y), r);
+
+            //we multiply the blur amount by our distance from center
+            //this leads to more blurriness as the shadow "fades away"
+            float blur = (1./resolution.x) * smoothstep(0., 1., r);
+
+            //now we use a simple gaussian blur
+            float sum = 0.0;
+
+            sum += sample(vec2(tc.x - 4.0*blur, tc.y), r) * 0.05;
+            sum += sample(vec2(tc.x - 3.0*blur, tc.y), r) * 0.09;
+            sum += sample(vec2(tc.x - 2.0*blur, tc.y), r) * 0.12;
+            sum += sample(vec2(tc.x - 1.0*blur, tc.y), r) * 0.15;
+
+            sum += center * 0.16;
+
+            sum += sample(vec2(tc.x + 1.0*blur, tc.y), r) * 0.15;
+            sum += sample(vec2(tc.x + 2.0*blur, tc.y), r) * 0.12;
+            sum += sample(vec2(tc.x + 3.0*blur, tc.y), r) * 0.09;
+            sum += sample(vec2(tc.x + 4.0*blur, tc.y), r) * 0.05;
+
+            //1.0 -> in light, 0.0 -> in shadow
+            float lit = mix(center, sum, softShadows);
+
+            //multiply the summed amount by our distance, which gives us a radial falloff
+            //then multiply by vertex (light) color
+            gl_FragColor = vColor * vec4(vec3(1.0), lit * smoothstep(1.0, 0.0, r));
+        }
+    </script>
+
+    <!-- taken from https://gist.github.com/mattdesl/5286905 -->
+    <script id="shadowMap" type="x-shader/x-fragment">
+        #ifdef GL_ES
+        #define LOWP lowp
+        precision mediump float;
+        #else
+        #define LOWP
+        #endif
+
+        #define PI 3.14
+        varying vec2 vTexCoord0;
+        varying LOWP vec4 vColor;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        //for debugging; use a constant value in final release
+        uniform float upScale;
+
+        //alpha threshold for our occlusion map
+        const float THRESHOLD = 0.75;
+
+        void main(void) {
+            float distance = 1.0;
+
+            for (float y=0.0; y<90000.0; y+=1.0) {
+                if (y >= resolution.y) {
+                    break;
+                }
+                //rectangular to polar filter
+                vec2 norm = vec2(vTexCoord0.s, y/resolution.y) * 2.0 - 1.0;
+                float theta = PI*1.5 + norm.x * PI;
+                float r = (1.0 + norm.y) * 0.5;
+
+                //coord which we will sample from occlude map
+                vec2 coord = vec2(-r * sin(theta), -r * cos(theta))/2.0 + 0.5;
+
+                //sample the occlusion map
+                vec4 data = texture2D(uSampler, coord);
+
+                //the current distance is how far from the top we've come
+                float dst = y/resolution.y / upScale;
+
+                //if we've hit an opaque fragment (occluder), then get new distance
+                //if the new distance is below the current, then we'll use that for our ray
+                float caster = data.a;
+                if (caster > THRESHOLD) {
+                    distance = min(distance, dst);
+                }
+            }
+            gl_FragColor = vec4(vec3(distance), 1.0);
+        }
+    </script>
+
+    <script id="allOrNothing" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler;
+
+        void main(void) {
+            vec4 fragC = texture2D(uSampler, vec2(vTexCoord0.s, vTexCoord0.t));
+            if (fragC.a > 0.3) {
+                gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+            } else {
+                gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+            }
+        }
+    </script>
+
+    <script id="textureNoResize" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        // texture being drawn
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        // size of thing being drawn onto
+        uniform vec2 canvas;
+
+        void main(void) {
+            vec2 canvasCoords = vTexCoord0 * canvas;
+            gl_FragColor = texture2D(uSampler, canvasCoords / resolution);
+        }
+    </script>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        void main(void) {
+            gl_FragColor = texture2D(uSampler, vec2(vTexCoord0.s, vTexCoord0.t));
+        }
+    </script>
+
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+        attribute vec2 aTextureCoord;
+        attribute vec4 aColor;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+
+        varying vec2 vTexCoord0;
+        varying vec4 vColor;
+
+        void main(void) {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            vTexCoord0 = aTextureCoord;
+            vColor = vec4(1.0, 1.0, 1.0, 1.0);
+        }
+    </script>
+    <script type="text/javascript" src="client/js/webgl.js"></script>
     <script type="text/javascript" src="bundle.js"></script>
   </body>
 </html>

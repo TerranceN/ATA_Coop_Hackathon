@@ -33,11 +33,10 @@ var requestAnimFrame = (function(){
 })();
 
 // Create the canvas
-var canvas = document.createElement("canvas");
+var canvas = document.getElementById("canvas");
+canvas.style.display = 'none';
 var ctx = canvas.getContext("2d");
 var target = document.getElementById("canvas-box");
-target.parentNode.replaceChild(canvas, target);
-canvas.id = 'canvas';
 canvas.width = 800;
 canvas.height = 600;
 var cameraOffset;
@@ -50,7 +49,9 @@ function main() {
 
     dt = Math.min(dt, 1000/60);
     update(dt);
-    render();
+    webgl.draw(renderLightBlockers, render);
+    //renderLightBlockers();
+    //render();
 
     lastTime = now;
     requestAnimFrame(main);
@@ -148,7 +149,7 @@ var init = function init() {
                     entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
                 }
             });
-            main();
+            loadResources();
         }
     });
 }
@@ -170,6 +171,48 @@ function updateEntities(dt) {
     }
     for (var i = 0; i < entities.length; i++) {
         entities[i].updateAnimation(dt);
+    }
+}
+
+function renderLightBlockers() {
+    ctx.setTransform(1,0,0,1,0,0);
+
+    var canvasSize = new Vector2(canvas.width, canvas.height);
+    var screenOffset = canvasSize.scale(1/2).add(userPlayer.getSmoothedPosition().scale(-1));
+    if (typeof(cameraOffset) == 'undefined') {
+        cameraOffset = screenOffset;
+    } else {
+        var difference = screenOffset.add(cameraOffset.scale(-1));
+        cameraOffset = cameraOffset.add(difference.scale(1/20));
+    }
+
+    //ctx.translate(cameraOffset.x, cameraOffset.y);
+
+    // Fill the screen gray (the out of bounds area)
+    ctx.fillStyle = '#222222';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Fill the area of the world that is in bounds as white
+    ctx.translate(screenOffset.x, screenOffset.y);
+    ctx.beginPath();
+    ctx.rect(0, 0, world.width, world.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Draw map
+    for (var i = 0; i < world.size.x; ++i) {
+        for (var j = 0; j < world.size.y; ++j) {
+            var tile_url = 'none';
+            // only draw walls
+            if (world.tiles[i][j].id == 1) { // wall
+                tile_url = 'client/img/wall.png';
+            }
+            if (tile_url != 'none') {
+                ctx.drawImage(resources.get(tile_url),
+                  i*world.gridunit, j*world.gridunit,
+                  world.gridunit, world.gridunit);
+            }
+        }
     }
 }
 
@@ -291,26 +334,31 @@ function sendMessage(){
     return false;
 };
 
-resources.load([
-    'client/img/sprites.png',
-    'client/img/terrain.png',
-    'client/img/player1.png',
-    'client/img/corpse.png',
-    'client/img/attack.png',
-    'client/img/hats/hat1.png',
-    'client/img/hats/hat2.png',
-    'client/img/hats/hat3.png',
-    'client/img/hats/hat4.png',
-    'client/img/hats/hat5.png',
-    'client/img/hats/hat6.png',
-    'client/img/hats/hat7.png',
-    'client/img/road.png',
-    'client/img/water.png',
-    'client/img/grass.png',
-    'client/img/wall.png',
-    'client/img/attack.png',
-    'client/img/rug.png',
-    'client/img/crate.png',
-    'client/img/table.png'
-]);
-resources.onReady(init);
+function loadResources() {
+    resources.load([
+        'client/img/sprites.png',
+        'client/img/terrain.png',
+        'client/img/player1.png',
+        'client/img/corpse.png',
+        'client/img/attack.png',
+        'client/img/hats/hat1.png',
+        'client/img/hats/hat2.png',
+        'client/img/hats/hat3.png',
+        'client/img/hats/hat4.png',
+        'client/img/hats/hat5.png',
+        'client/img/hats/hat6.png',
+        'client/img/hats/hat7.png',
+        'client/img/road.png',
+        'client/img/water.png',
+        'client/img/grass.png',
+        'client/img/wall.png',
+        'client/img/attack.png',
+        'client/img/rug.png',
+        'client/img/crate.png',
+        'client/img/table.png'
+    ]);
+    resources.onReady = main
+}
+
+webgl.init();
+init();
