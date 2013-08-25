@@ -30,7 +30,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="client/js/resources.js"></script>
-    <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/glMatrix-0.9.5.min.js"></script>
+    <script type="text/javascript" src="client/js/gl-matrix.js"></script>
     <script type="text/javascript" src="http://learningwebgl.com/lessons/lesson05/webgl-utils.js"></script>
     <script id="makeShadows" type="x-shader/x-fragment">
         precision mediump float;
@@ -39,7 +39,6 @@
 
         uniform sampler2D uSampler;
         uniform vec2 resolution;
-        uniform vec2 mousePos;
 
         float GetShadowDistanceH() {
             float u = vTexCoord0.x;
@@ -94,7 +93,16 @@
             float light = distance < shadowMapDistance ? 1.0:0.0;
             //float light = vTexCoord0.x > shadowMapDistance ? 1.0:0.0;
             vec4 result = vec4(light);
+            float invDistance = 1.0 - distance;
+            vec2 loc = gl_FragCoord.xy / resolution;
+            vec2 fracLoc = gl_FragCoord.xy / resolution;
+            float len = length(fracLoc - 0.5);
+            vec2 middle = gl_FragCoord.xy / 2.0;
+            float invDist = 1.0 - (len * (resolution.x / 300.0));
             result.a = 1.0;
+            result.r = min(invDist, light);
+            result.g = min(invDist, light);
+            result.b = min(invDist, light);
             gl_FragColor = result;
         }
     </script>
@@ -144,14 +152,12 @@
 
         void main(void) {
             vec4 color = texture2D(uSampler, vTexCoord0);
-            if (color.a > 0.1) {
+            if ((color.r < 0.9 || color.g < 0.9 || color.b < 0.9) && color.a > 0.1) {
                 float distance = length(vTexCoord0 - 0.5);
                 gl_FragColor = vec4(0.0,0.0,0.0, distance);
             } else {
                 gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
             }
-            //compute distance from center
-            //save it to the Red channel
         }
     </script>
 
@@ -192,12 +198,26 @@
         uniform sampler2D uSampler;
 
         void main(void) {
-            vec4 fragC = texture2D(uSampler, vec2(vTexCoord0.s, vTexCoord0.t));
+            vec4 fragC = texture2D(uSampler, vTexCoord0);
             if (fragC.a > 0.3) {
                 gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
             } else {
                 gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
             }
+        }
+    </script>
+
+    <script id="transparent" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler;
+        uniform vec2 resolution;
+
+        void main(void) {
+            vec4 color = texture2D(uSampler, vTexCoord0);
+            gl_FragColor = color;
         }
     </script>
 
@@ -217,18 +237,15 @@
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec3 aVertexPosition;
         attribute vec2 aTextureCoord;
-        attribute vec4 aColor;
 
         uniform mat4 uMVMatrix;
         uniform mat4 uPMatrix;
 
         varying vec2 vTexCoord0;
-        varying vec4 vColor;
 
         void main(void) {
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
             vTexCoord0 = aTextureCoord;
-            vColor = vec4(1.0, 1.0, 1.0, 1.0);
         }
     </script>
     <script type="text/javascript" src="client/js/webgl.js"></script>

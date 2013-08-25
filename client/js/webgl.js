@@ -4,7 +4,7 @@ var webgl = (function() {
     function initGL(canvas) {
         try {
             console.log(canvas);
-            gl = canvas.getContext("experimental-webgl");
+            gl = canvas.getContext("experimental-webgl", { alpha: false });
             gl.viewportWidth = canvas.width;
             gl.viewportHeight = canvas.height;
 
@@ -15,6 +15,7 @@ var webgl = (function() {
 
             console.log("nextPOT size: " + nextPOTWidth + ", " + nextPOTHeight);
             gl.disable(gl.DEPTH_TEST);
+            gl.depthMask(false);
         } catch (e) {
             console.log("Error when creating gl context: " +  + e.message);
         }
@@ -101,6 +102,7 @@ var webgl = (function() {
     var distanceProgram;
     var reductionProgram;
     var makeShadowsProgram;
+    var transparentProgram;
 
     function initShaders() {
         vertexShaderName = "shader-vs";
@@ -111,6 +113,7 @@ var webgl = (function() {
         distanceProgram = makeShader(vertexShaderName, "distance");
         reductionProgram = makeShader(vertexShaderName, "reduction");
         makeShadowsProgram = makeShader(vertexShaderName, "makeShadows");
+        transparentProgram = makeShader(vertexShaderName, "transparent");
 
         setShader(defaultProgram);
     }
@@ -137,7 +140,7 @@ var webgl = (function() {
             handleLoadedTexture(neheTexture)
         }
 
-        neheTexture.image.src = "../../webgl/nehe.gif";
+        neheTexture.image.src = "../../webgl/shadowtest.png";
     }
 
 
@@ -194,10 +197,10 @@ var webgl = (function() {
         squareVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
         vertices = [
-            -25.0, -25.0,
-            25.0, -25.0,
-            25.0, 25.0,
-            -25.0, 25.0
+            0.0, 0.0,
+            1024.0, 0.0,
+            1024.0, 1024.0,
+            0.0, 1024.0
         ];
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
@@ -356,17 +359,23 @@ var webgl = (function() {
     }
 
     function drawNeHeLogo() {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.viewport(0, 0, fbo1.width, fbo1.height);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-        gl.vertexAttribPointer(currentShader.vertexAttribLocation, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        if (currentShader) {
+            gl.vertexAttribPointer(currentShader.vertexAttribLocation, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        }
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexTextureCoordBuffer);
-        gl.vertexAttribPointer(currentShader.textureAttribLocation, squareVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        if (currentShader) {
+            gl.vertexAttribPointer(currentShader.textureAttribLocation, squareVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        }
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, neheTexture);
-        gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
+        if (currentShader) {
+            gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
+        }
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, squareVertexIndexBuffer);
         setMatrixUniforms();
@@ -395,8 +404,11 @@ var webgl = (function() {
         pPopMatrix();
     }
 
-    var transX = 100;
-    var transY = 100;
+    var transX = 0;
+    var transY = 0;
+
+    var mouseX = 0;
+    var mouseY = 0;
 
     function drawScene() {
         mvMatrix = mat4.identity(mvMatrix);
@@ -406,6 +418,14 @@ var webgl = (function() {
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(allOrNothingProgram);
         mvPushMatrix();
+            //mvPushMatrix();
+            //    mat4.translate(mvMatrix, [-(fbo1.width - gl.viewportWidth) / 2, (fbo1.height - gl.viewportHeight) / 2, 0]);
+            //    var testM = mat4.inverse(mvMatrix);
+            //    var newMouse = vec3.create();
+            //    mat4.multiplyVec3(mvMatrix, [mouseX, mouseY, 0], newMouse);
+            //    var diffX = (gl.viewportWidth / 2) - newMouse[0];
+            //    var diffY = (gl.viewportHeight / 2) - newMouse[1];
+            //mvPopMatrix();
             mat4.translate(mvMatrix, [transX, transY, 0]);
             drawNeHeLogo();
         mvPopMatrix();
@@ -430,16 +450,27 @@ var webgl = (function() {
         setShader(makeShadowsProgram);
         drawFBO(reductionSteps[0]);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(defaultProgram);
         drawFBO(fbo1);
+        gl.enable(gl.BLEND);
+        gl.disable(gl.DEPTH_TEST);
+        gl.depthMask(false);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        setShader(transparentProgram);
 
+        drawNeHeLogo();
+        gl.disable(gl.BLEND);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(defaultProgram);
         mvPushMatrix();
-            mat4.identity(mvMatrix);
-            mat4.translate(mvMatrix, [transX, transY, 0]);
-            drawNeHeLogo();
+            mat4.translate(mvMatrix, [-(fbo1.width - gl.viewportWidth) / 2, (fbo1.height - gl.viewportHeight) / 2, 0]);
+            drawFBO(fbo2);
         mvPopMatrix();
     }
 
@@ -470,7 +501,6 @@ var webgl = (function() {
     var reductionFBO;
 
     function initReductionSteps() {
-        reductionFBO = newFBO(2, fbo1.height);
         reductionSteps = [];
         var power = 2;
         for (var i = 0; power < fbo1.width / 2; i++) {
@@ -493,12 +523,6 @@ var webgl = (function() {
                 drawFBO(reductionSteps[i + 1]);
             }
         }
-
-        setShader(defaultProgram);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, reductionFBO);
-        gl.clearColor(0.0, 0.0, 0.0, 0.0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        drawFBO(reductionSteps[0]);
     }
 
     //function webGLStart() {
@@ -544,14 +568,15 @@ var webgl = (function() {
         var canvas = document.createElement("canvas");
         canvas.width = 800;
         canvas.height = 600;
+        //canvas.width = 900;
+        //canvas.height = 900;
         var target = document.getElementById("canvas-box");
         target.appendChild(canvas);
 
         canvas.onmousemove = function (e) {
             var coords = relMouseCoords(e, canvas);
-            transX = coords.x;
-            transY = coords.y;
-            console.log("mousePos: " + coords.x + ", " + coords.y);
+            mouseX = coords.x;
+            mouseY = coords.y;
             //gl.uniform2f(gl.getUniformLocation(currentShader, "lightPos"), e.clientX, e.clientY);
         }
 
@@ -569,11 +594,11 @@ var webgl = (function() {
     }
 
     function webglDraw(createLightBlockerImage, createFinalImage) {
-        //createLightBlockerImage();
+        createLightBlockerImage();
 
         // generate mask
 
-        //createFinalImage();
+        createFinalImage();
 
         // use mask to mask final image
     }

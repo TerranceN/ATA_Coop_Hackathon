@@ -1,7 +1,8 @@
 html, body {
     margin: 0;
     padding: 0;
-    background-color: #151515;
+    /*background-color: #151515;*/
+    background-color: #FF1515;
 }
 
 canvas {
@@ -44,8 +45,9 @@ canvas {
 
 #chatbox {
     float: right;
-    width: 200px;
+    width: 199px;
     height: 480px;
+    border-left: 1px grey solid;
 }
 
 #chatoutput {
