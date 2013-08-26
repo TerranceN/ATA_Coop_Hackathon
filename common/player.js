@@ -114,7 +114,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
                 this.stopInteracting(world, interactive);
             }
         }
-        if (this.actionQueue.length && !this.interacting) {
+        if (this.actionQueue.length && !this.interacting && this.alive) {
             action = false;
             while (this.actionQueue.length) {
                 action = action || this.actionQueue.shift()
@@ -128,7 +128,7 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
                     interactive = interactives[i];
                     posDiff = interactive.position.add(this.position.scale(-1))
                     angleDiff = Math.atan2(posDiff.y, posDiff.x);
-                    if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 4 && posDiff.length() < 40) {
+                    if (Math.abs(angleLessThanPI(angleDiff - this.angle)) < Math.PI / 3 && posDiff.length() < 45) {
                         validInteractives.push({key:posDiff.length(), obj:interactive});
                     }
                 }
@@ -143,7 +143,6 @@ Player.prototype.update = function (delta, players, world, gameState, io) {
                 if (minKey !== Infinity) {
                     var interactive = validInteractives[minIdx].obj;
                     now = Date.now();
-                    console.log("START INTERACTION");
                     this.interacting = interactive.beginInteraction(this, now) && {
                         interactiveId:interactive.id,
                         startTime:now

@@ -6,6 +6,30 @@ var Item = require("../../common/item");
 Player.prototype.draw = function (canvas, ctx, world) {
     var drawPos = this.getSmoothedPosition();
 
+
+	//
+	if (this.interacting) {
+		var interactive = world.getObjectById(this.interacting.interactiveId);
+		var progress = (Date.now() - this.interacting.startTime) / interactive.duration;
+		var barsize = new Vector2(32,6);
+		// progress bar bkg
+		ctx.beginPath();
+		ctx.rect(drawPos.x - barsize.x/2, drawPos.y - this.size - barsize.y - 4, barsize.x, barsize.y);
+		ctx.fillStyle = '#dddddd';
+		ctx.fill();
+		//progress bar percent fill
+		ctx.beginPath();
+		ctx.rect(drawPos.x - barsize.x/2, drawPos.y - this.size - barsize.y - 4, barsize.x * progress, barsize.y);
+		ctx.fillStyle = '#3344aa';
+		ctx.fill();
+		//progress bar outline
+		ctx.beginPath();
+		ctx.rect(drawPos.x - barsize.x/2, drawPos.y - this.size - barsize.y - 4, barsize.x, barsize.y);
+		ctx.lineWidth = 1;
+		ctx.strokeStyle = '#000000';
+		ctx.stroke();
+	}
+	
     // Render the player 
     if (this.alive) { 
         ctx.beginPath();
@@ -24,24 +48,6 @@ Player.prototype.draw = function (canvas, ctx, world) {
         ctx.translate(-this.hat.size[0]/2 - 5, -this.hat.size[1]/2);
         this.hat.render(ctx);
         ctx.restore();
-
-        //
-        if (this.interacting) {
-            var interactive = world.getObjectById(this.interacting.interactiveId);
-            var progress = (Date.now() - this.interacting.startTime) / interactive.duration;
-            var barsize = new Vector2(32,6);
-            //progress bar
-            ctx.beginPath();
-            ctx.rect(drawPos.x - barsize.x/2, drawPos.y - this.size - barsize.y - 4, barsize.x * progress, barsize.y);
-            ctx.fillStyle = '#999999';
-            ctx.fill();
-            //progress bar outline
-            ctx.beginPath();
-            ctx.rect(drawPos.x - barsize.x/2, drawPos.y - this.size - barsize.y - 4, barsize.x, barsize.y);
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = '#000000';
-            ctx.stroke();
-        }
         // Draw items below the user
         var itemCount = this.items[Item.TYPES.objective].length;
         var rowSize = 4;

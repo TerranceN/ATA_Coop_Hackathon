@@ -6,10 +6,6 @@ var Tile = require('./tile');
 var Searchable = require('./searchable');
 var Item = require('./item');
 
-var ground = 0;
-var wall = 1;
-var nothing = 2;
-
 var World = function( numPlayers ) {
     this.lastObjectId = 0;
 	if (typeof(numPlayers) == 'undefined') {
@@ -32,7 +28,7 @@ var World = function( numPlayers ) {
 	for (var i = 0; i < this.size.x; ++i) {
 		this.tiles[i] = new Array(this.size.y);
 		for (var j = 0; j < this.size.y; ++j) {
-			this.tiles[i][j] = new Tile(2, 0);
+			this.tiles[i][j] = new Tile(Tile.VOID, 0);
 		}
 	}
 
@@ -111,22 +107,15 @@ World.prototype.generate = function() {
 			finalRooms++;
 			var structureId = this.getNextRoomId();
 			room.structureId = structureId;
-			var tileType = Math.floor(Math.random() * 2);
+			//var tileType = Math.floor(Math.random() * 2);
 			for (var j = 0; j < size.x; ++j) {
 				for (var k = 0; k < size.y; ++k) {
-					if (j == 0 || k == 0 || j == size.x - 1 || k == size.y - 1) { // NOTHING
-						//this.tiles[position.x + j][position.y + k] = new Tile(2);
-					//} else if (j == 1 || k == 1 || j == size.x - 2 || k == size.y - 2) { // WALL
-						this.tiles[position.x + j][position.y + k] = new Tile(1, 0);
+					if (j == 0 || k == 0 || j == size.x - 1 || k == size.y - 1) {
+						this.tiles[position.x + j][position.y + k] = new Tile(Tile.WALL, 0);
 						this.tiles[position.x + j][position.y + k].owner_id = structureId;	
 					} else { // FLOOR
-						if (tileType == 0) {
-							this.tiles[position.x + j][position.y + k] = new Tile(0, 0);	
-							this.tiles[position.x + j][position.y + k].owner_id = structureId;	
-						} else {
-							this.tiles[position.x + j][position.y + k] = new Tile(3, 0);	
-							this.tiles[position.x + j][position.y + k].owner_id = structureId;			
-						}
+						this.tiles[position.x + j][position.y + k] = new Tile(Tile.ROOM, 0);	
+						this.tiles[position.x + j][position.y + k].owner_id = structureId;	
 					}
 				}
 			}
@@ -204,32 +193,32 @@ World.prototype.connect = function(roomA, roomB) {
 	var structureId = this.getNextHallId();
 	for (var i = roomA.center.x; xDir != 0 && (xDir == -1 ? i >= roomB.center.x : i <= roomB.center.x); i += xDir) {
 		if (this.tiles[i][roomA.center.y].id != 0 && this.tiles[i][roomA.center.y].id != 3) {
-			this.tiles[i][roomA.center.y] = new Tile(0, 1); // GROUND
+			this.tiles[i][roomA.center.y] = new Tile(Tile.CORRIDOR, 1);
 			this.tiles[i][roomA.center.y].owner_id = structureId;	
 		} //else if (this.tiles[i][roomA.center.y].owner_id != roomA.structureId) {
 			//earlyBreak = true;
 		//}
 		if (this.tiles[i][roomA.center.y - 1].id != 0 && this.tiles[i][roomA.center.y - 1].id != 3) {
-			this.tiles[i][roomA.center.y - 1] = new Tile(0, 1); // GROUND
+			this.tiles[i][roomA.center.y - 1] = new Tile(Tile.CORRIDOR, 1);
 			this.tiles[i][roomA.center.y - 1].owner_id = structureId;	
 		} //else if (this.tiles[i][roomA.center.y - 1].owner_id != roomA.structureId) {
 			//earlyBreak = true;
 		//}
 		if (this.tiles[i][roomA.center.y - 2].id == 2) {
 			if (this.tiles[i][roomA.center.y - 3].id == 0) {
-				this.tiles[i][roomA.center.y - 2] = new Tile(0, 1); // GROUND
+				this.tiles[i][roomA.center.y - 2] = new Tile(Tile.CORRIDOR, 1);
 				this.tiles[i][roomA.center.y - 2].owner_id = structureId; 
 			} else {
-				this.tiles[i][roomA.center.y - 2] = new Tile(1, 1); // WALL
+				this.tiles[i][roomA.center.y - 2] = new Tile(Tile.WALL, 1);
 				this.tiles[i][roomA.center.y - 2].owner_id = structureId; 
 			}
 		}
 		if (this.tiles[i][roomA.center.y + 1].id == 2) {
 			if (this.tiles[i][roomA.center.y + 2].id == 0) {
-				this.tiles[i][roomA.center.y + 1] = new Tile(0, 1); // GROUND	
+				this.tiles[i][roomA.center.y + 1] = new Tile(Tile.CORRIDOR, 1);
 				this.tiles[i][roomA.center.y + 1].owner_id = structureId; 	
 			} else {
-				this.tiles[i][roomA.center.y + 1] = new Tile(1, 1); // WALL
+				this.tiles[i][roomA.center.y + 1] = new Tile(Tile.WALL, 1);
 				this.tiles[i][roomA.center.y + 1].owner_id = structureId; 
 			}
 		}
@@ -241,32 +230,32 @@ World.prototype.connect = function(roomA, roomB) {
 		structureId = this.getNextHallId();
 		for (var i = roomA.center.y; yDir != 0 && (yDir == -1 ? i >= roomB.center.y : i <= roomB.center.y); i += yDir) {
 			if (this.tiles[roomB.center.x][i].id != 0 && this.tiles[roomB.center.x][i].id != 3) {
-				this.tiles[roomB.center.x][i] = new Tile(0, 1); // GROUND	
+				this.tiles[roomB.center.x][i] = new Tile(Tile.CORRIDOR, 1);	
 				this.tiles[roomB.center.x][i].owner_id = structureId;	
 			} //else if (this.tiles[roomB.center.x][i].owner_id != roomA.structureId) {
 				//earlyBreak = true;
 			//}
 			if (this.tiles[roomB.center.x - 1][i].id != 0 && this.tiles[roomB.center.x - 1][i].id != 3) {
-				this.tiles[roomB.center.x - 1][i] = new Tile(0, 1); // GROUND	
+				this.tiles[roomB.center.x - 1][i] = new Tile(Tile.CORRIDOR, 1);
 				this.tiles[roomB.center.x - 1][i].owner_id = structureId;	
 			} //else if (this.tiles[roomB.center.x - 1][i].owner_id != roomA.structureId) {
 				//earlyBreak = true;
 			//}
 			if (this.tiles[roomB.center.x - 2][i].id == 2) {
 				if (this.tiles[roomB.center.x - 3][i].id == 0) {
-					this.tiles[roomB.center.x - 2][i] = new Tile(0, 1); // GROUND	
+					this.tiles[roomB.center.x - 2][i] = new Tile(Tile.CORRIDOR, 1);	
 					this.tiles[roomB.center.x - 2][i].owner_id = structureId; 	
 				} else {
-					this.tiles[roomB.center.x - 2][i] = new Tile(1, 1); // WALL
+					this.tiles[roomB.center.x - 2][i] = new Tile(Tile.WALL, 1);
 					this.tiles[roomB.center.x - 2][i].owner_id = structureId; 
 				}
 			}
 			if (this.tiles[roomB.center.x + 1][i].id == 2) {
 				if (this.tiles[roomB.center.x + 2][i].id == 0) {
-					this.tiles[roomB.center.x + 1][i] = new Tile(0, 1); // GROUND		
+					this.tiles[roomB.center.x + 1][i] = new Tile(Tile.CORRIDOR, 1);		
 					this.tiles[roomB.center.x + 1][i].owner_id = structureId; 
 				} else {
-					this.tiles[roomB.center.x + 1][i] = new Tile(1, 1); // WALL
+					this.tiles[roomB.center.x + 1][i] = new Tile(Tile.WALL, 1);
 					this.tiles[roomB.center.x + 1][i].owner_id = structureId;
 				}
 			}
@@ -331,10 +320,11 @@ World.prototype.createObjects = function() {
 		var searchable;
 		
 		var type = Math.floor(Math.random() * 3);
+		var angle = (Math.random() - 0.5) * Math.PI / 6; // items can be slightly askew
 		if (type == 0) {
-			searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), 0, Searchable.CRATE, 3000);
+			searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), angle, Searchable.CRATE, 3000);
 		} else {
-			searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), 0, Searchable.TABLE, 3000);
+			searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), angle, Searchable.TABLE, 3000);
 		//} else {
 			//searchable = new Searchable(this.getNextObjectId(), new Vector2(0, 0), 0, Searchable.RUG, 3000);
 		}

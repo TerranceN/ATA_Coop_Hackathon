@@ -96,13 +96,13 @@ gameManager.prototype.checkState = function ( players ) {
             this.endGame("Game Over: Doesn't seem like anyone wants to play.");
         }
         if (info['player'] - info['assassin'] <= 0){
-            this.endGame("Game Over: The assassins have killed everyone else.");
+            this.endGame("No innocent remain. The assassins win!");
         }
-        /*if (info['assassin'] == 0){
-            this.endGame("Game Over: The assassins are dead. Everyone is safe.");
-        }*/
+        if (info['assassin'] == 0){
+            this.endGame("The assassins are dead. Since there is not currently a time limit, the innocent win.");
+        }
         if (this.objectiveCondition(players)) {
-            this.endGame("Game Over: the \"good guys\" have fulfilled their objective!");
+            this.endGame("5 keys collected, the innocent win!");
         }
     } else if (this.state == this.STARTING) {
         if (info['ready'] == info['player']) {

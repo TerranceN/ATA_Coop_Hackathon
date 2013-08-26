@@ -6,6 +6,7 @@ var World = require("../../common/world");
 var Sprite = require("../../common/sprite");
 var Entity = require("../../common/entity");
 var Searchable = require("../../common/searchable");
+var Tile = require('../../common/tile');
 
 var userPlayer;
 var players = [];
@@ -228,23 +229,19 @@ function render() {
     for (var i = 0; i < world.size.x; ++i) {
         for (var j = 0; j < world.size.y; ++j) {
             var tile_url = 'client/img/dark.png';
-            if (world.tiles[i][j].id == 0) { // ground
-                var tile_url = 'client/img/road.png';
-            } else if (world.tiles[i][j].id == 1) { // wall
-                var tile_url = 'client/img/wall.png';
-                if (world.tiles[i][j].owner_id == world.rooms[world.objectiveRoomIdx].id) {
-                    var tile_url = 'client/img/grass.png';
-                }
-            } else if (world.tiles[i][j].id == -1) { // DEBUG
-                var tile_url = 'none';
-            } else if (world.tiles[i][j].id == 3) { // corridor
-                var tile_url = 'client/img/corridor.png';
+            if (world.tiles[i][j].id == Tile.ROOM) {
+                tile_url = 'client/img/road.png';
+				if (world.tiles[i][j].owner_id == world.rooms[world.objectiveRoomIdx].structureId) {	
+					tile_url = 'client/img/grass.png';
+				}
+            } else if (world.tiles[i][j].id == Tile.WALL) {
+                tile_url = 'client/img/wall.png';
+            } else if (world.tiles[i][j].id == Tile.CORRIDOR) {
+                tile_url = 'client/img/corridor.png';
             }
-            if (tile_url != 'none') {
-                ctx.drawImage(resources.get(tile_url),
-                  i*world.gridunit, j*world.gridunit,
-                  world.gridunit, world.gridunit);
-            }
+			ctx.drawImage(resources.get(tile_url),
+			  i*world.gridunit, j*world.gridunit,
+			  world.gridunit, world.gridunit);
         }
     }
 
@@ -278,17 +275,15 @@ function render() {
     for (var i = 0; i < world.size.x; ++i) {
         for (var j = 0; j < world.size.y; ++j) {
             var color = 'none';
-            if (world.tiles[i][j].id == 0) { // ground
+            if (world.tiles[i][j].id == Tile.ROOM) { // ground
                 color = '#8E5A26';
-            } else if (world.tiles[i][j].id == 1) { // wall
-                color  = '#171717';
-            } else if (world.tiles[i][j].id == -1) { // DEBUG
-                color = '#FFFFFF';
-            } else if (world.tiles[i][j].id == 3) { // Corridor
+				if (world.tiles[i][j].owner_id == world.rooms[world.objectiveRoomIdx].structureId) {	
+					color = '#00ff00';
+				}
+            } else if (world.tiles[i][j].id == Tile.WALL) { // wall
+                color  = '#371717';
+            } else if (world.tiles[i][j].id == Tile.CORRIDOR) { // Corridor
                 color = '#7E7E7E';
-            }
-            if ( world.tiles[i][j] == 'undefined'){
-                console.log(world);
             }
 
             if (color != 'none' && ((world.tiles[i][j].type == 0 && userPlayer.visitedRooms & world.tiles[i][j].owner_id) ||

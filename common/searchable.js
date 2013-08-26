@@ -44,6 +44,8 @@ var Searchable = function(id, position, angle, type, duration) {
      * their particular begin interaction timestamps.
      */
     this.interactions = [];
+	
+	// 1 in 3 chance of finding an item
     this.contains = (Math.floor(Math.random() * 3) == 0 ? 1 : 0);
 
     this.beginInteraction = idleBeginInteraction;
@@ -80,7 +82,6 @@ var allowPlayerInteraction = function (player) {
 }
 function generateOnPlayerSuccess (objectiveId) {
     var onPlayerSuccess = function (player) {
-    	console.log("GOT AN ITEM!!!")
         for (var i = 0; i < this.contains; i++) {
 		    player.items[Item.TYPES.objective].push(new Item(objectiveId, Item.TYPES.objective, null));
 	    }
