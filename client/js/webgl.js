@@ -1,5 +1,6 @@
 var webgl = (function() {
     var gl;
+    var gameCanvas;
 
     function initGL(canvas) {
         try {
@@ -103,6 +104,8 @@ var webgl = (function() {
     var reductionProgram;
     var makeShadowsProgram;
     var transparentProgram;
+    var gaussianHorizontalProgram;
+    var gaussianVerticalProgram;
 
     function initShaders() {
         vertexShaderName = "shader-vs";
@@ -114,6 +117,8 @@ var webgl = (function() {
         reductionProgram = makeShader(vertexShaderName, "reduction");
         makeShadowsProgram = makeShader(vertexShaderName, "makeShadows");
         transparentProgram = makeShader(vertexShaderName, "transparent");
+        gaussianHorizontalProgram = makeShader(vertexShaderName, "gaussian-horizontal");
+        gaussianVerticalProgram = makeShader(vertexShaderName, "gaussian-vertical");
 
         setShader(defaultProgram);
     }
@@ -123,8 +128,8 @@ var webgl = (function() {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.bindTexture(gl.TEXTURE_2D, null);
@@ -134,13 +139,18 @@ var webgl = (function() {
     var neheTexture;
 
     function initTexture() {
-        neheTexture = gl.createTexture();
-        neheTexture.image = new Image();
-        neheTexture.image.onload = function () {
-            handleLoadedTexture(neheTexture)
+        if (typeof(neheTexture) != 'undefined') {
+            gl.deleteTexture(neheTexture);
         }
+        neheTexture = gl.createTexture();
+        //neheTexture.image = new Image();
+        //neheTexture.image.onload = function () {
+        //    handleLoadedTexture(neheTexture)
+        //}
 
-        neheTexture.image.src = "../../webgl/shadowtest.png";
+        //neheTexture.image.src = "../../webgl/shadowtest.png";
+        neheTexture.image = gameCanvas;
+        handleLoadedTexture(neheTexture);
     }
 
 
@@ -359,7 +369,7 @@ var webgl = (function() {
     }
 
     function drawNeHeLogo() {
-        gl.viewport(0, 0, fbo1.width, fbo1.height);
+        gl.viewport(0, 0, neheTexture.image.width, neheTexture.image.height);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
         if (currentShader) {
@@ -413,6 +423,10 @@ var webgl = (function() {
     function drawScene() {
         mvMatrix = mat4.identity(mvMatrix);
 
+        initTexture();
+
+        pMatrix = mat4.ortho(0, fbo1.width, fbo1.height, 0, -1, 1);
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -453,6 +467,18 @@ var webgl = (function() {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(gaussianHorizontalProgram);
+        drawFBO(fbo1);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        setShader(gaussianVerticalProgram);
+        drawFBO(fbo2);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(defaultProgram);
         drawFBO(fbo1);
         gl.enable(gl.BLEND);
@@ -460,9 +486,10 @@ var webgl = (function() {
         gl.depthMask(false);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         setShader(transparentProgram);
-
         drawNeHeLogo();
         gl.disable(gl.BLEND);
+
+        pMatrix = mat4.ortho(0, gl.viewportWidth, gl.viewportHeight, 0, -1, 1);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
@@ -564,7 +591,8 @@ var webgl = (function() {
         return {x:canvasX, y:canvasY}
     }
 
-    function webglInit() {
+    function webglInit(newGameCanvas) {
+        gameCanvas = newGameCanvas;
         var canvas = document.createElement("canvas");
         canvas.width = 800;
         canvas.height = 600;

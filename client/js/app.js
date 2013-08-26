@@ -33,12 +33,13 @@ var requestAnimFrame = (function(){
 })();
 
 // Create the canvas
-var canvas = document.getElementById("canvas");
+var canvas = document.createElement("canvas");
+canvas.width = 1024;
+canvas.height = 1024;
 canvas.style.display = 'none';
-var ctx = canvas.getContext("2d");
 var target = document.getElementById("canvas-box");
-canvas.width = 800;
-canvas.height = 600;
+target.appendChild(canvas);
+var ctx = canvas.getContext("2d");
 var cameraOffset;
 
 // The main game loop
@@ -49,8 +50,8 @@ function main() {
 
     dt = Math.min(dt, 1000/60);
     update(dt);
-    webgl.draw(renderLightBlockers, render);
-    //renderLightBlockers();
+    //webgl.draw(renderLightBlockers, render);
+    renderLightBlockers();
     //render();
 
     lastTime = now;
@@ -149,8 +150,8 @@ var init = function init() {
                     entities.push(new Entity(new Vector2(data['position'].x, data['position'].y), data['angle'], data['type']));
                 }
             });
-            loadResources();
         }
+        loadResources();
     });
 }
 
@@ -357,8 +358,8 @@ function loadResources() {
         'client/img/crate.png',
         'client/img/table.png'
     ]);
-    resources.onReady = main
+    resources.onReady(main);
 }
 
-webgl.init();
+webgl.init(canvas);
 init();

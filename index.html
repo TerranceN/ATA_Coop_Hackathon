@@ -19,7 +19,7 @@
 
       <div id="score"></div>
       <div id="main">
-          <div id="canvas-box"><canvas id="canvas"></canvas></div>
+          <div id="canvas-box"></div>
         <div id="chatbox">
           <div id="chatoutput"></div>
           <input type="text" id="chatinput"></input>
@@ -93,11 +93,8 @@
             float light = distance < shadowMapDistance ? 1.0:0.0;
             //float light = vTexCoord0.x > shadowMapDistance ? 1.0:0.0;
             vec4 result = vec4(light);
-            float invDistance = 1.0 - distance;
-            vec2 loc = gl_FragCoord.xy / resolution;
             vec2 fracLoc = gl_FragCoord.xy / resolution;
             float len = length(fracLoc - 0.5);
-            vec2 middle = gl_FragCoord.xy / 2.0;
             float invDist = 1.0 - (len * (resolution.x / 300.0));
             result.a = 1.0;
             result.r = min(invDist, light);
@@ -153,7 +150,7 @@
         void main(void) {
             vec4 color = texture2D(uSampler, vTexCoord0);
             if ((color.r < 0.9 || color.g < 0.9 || color.b < 0.9) && color.a > 0.1) {
-                float distance = length(vTexCoord0 - 0.5);
+                float distance = length(vTexCoord0 - 0.5) + (2.0 / resolution.x);
                 gl_FragColor = vec4(0.0,0.0,0.0, distance);
             } else {
                 gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
@@ -199,7 +196,7 @@
 
         void main(void) {
             vec4 fragC = texture2D(uSampler, vTexCoord0);
-            if (fragC.a > 0.3) {
+            if (fragC.a > 0.3 && (fragC.r < 0.9 || fragC.g < 0.9 || fragC.b < 0.9)) {
                 gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
             } else {
                 gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
@@ -217,7 +214,78 @@
 
         void main(void) {
             vec4 color = texture2D(uSampler, vTexCoord0);
-            gl_FragColor = color;
+            if (color.a > 0.3 && (color.r < 0.9 || color.g < 0.9 || color.b < 0.9)) {
+                float distance = 1.0 - (length(vTexCoord0 - 0.5) * (resolution.x / 300.0));
+                distance = max(0.0, distance);
+                color.r = color.r * distance;
+                color.g = color.g * distance;
+                color.b = color.b * distance;
+                gl_FragColor = color;
+            } else {
+                gl_FragColor = vec4(0.0);
+            }
+        }
+    </script>
+
+    <script id="gaussian-horizontal" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler; // the texture with the scene you want to blur
+        uniform vec2 resolution;
+
+        void main(void)
+        {
+           vec4 sum = vec4(0.0);
+
+           float distance = length(vTexCoord0 - 0.5);
+           float blurSize = (15.0 * (distance)) / resolution.x;
+
+           // blur in x (horizontal)
+           // take nine samples, with the distance blurSize between them
+           sum += texture2D(uSampler, vec2(vTexCoord0.x - 4.0*blurSize, vTexCoord0.y)) * 0.05;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x - 3.0*blurSize, vTexCoord0.y)) * 0.09;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x - 2.0*blurSize, vTexCoord0.y)) * 0.12;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x - blurSize, vTexCoord0.y)) * 0.15;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y)) * 0.16;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x + blurSize, vTexCoord0.y)) * 0.15;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x + 2.0*blurSize, vTexCoord0.y)) * 0.12;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x + 3.0*blurSize, vTexCoord0.y)) * 0.09;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x + 4.0*blurSize, vTexCoord0.y)) * 0.05;
+
+           gl_FragColor = sum;
+        }
+    </script>
+
+    <script id="gaussian-vertical" type="x-shader/x-fragment">
+        precision mediump float;
+
+        varying vec2 vTexCoord0;
+
+        uniform sampler2D uSampler; // this should hold the texture rendered by the horizontal blur pass
+        uniform vec2 resolution;
+
+        void main(void)
+        {
+           vec4 sum = vec4(0.0);
+
+           float distance = length(vTexCoord0 - 0.5) / sqrt(2.0);
+           float blurSize = (15.0 * (distance)) / resolution.x;
+
+           // blur in y (vertical)
+           // take nine samples, with the distance blurSize between them
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y - 4.0*blurSize)) * 0.05;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y - 3.0*blurSize)) * 0.09;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y - 2.0*blurSize)) * 0.12;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y - blurSize)) * 0.15;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y)) * 0.16;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y + blurSize)) * 0.15;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y + 2.0*blurSize)) * 0.12;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y + 3.0*blurSize)) * 0.09;
+           sum += texture2D(uSampler, vec2(vTexCoord0.x, vTexCoord0.y + 4.0*blurSize)) * 0.05;
+
+           gl_FragColor = sum;
         }
     </script>
 
