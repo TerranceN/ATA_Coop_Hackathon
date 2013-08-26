@@ -96,10 +96,12 @@
             vec2 fracLoc = gl_FragCoord.xy / resolution;
             float len = length(fracLoc - 0.5);
             float invDist = 1.0 - (len * (resolution.x / 300.0));
+            invDist = max(0.0, invDist);
+            float invDistSq = invDist * invDist;
             result.a = 1.0;
-            result.r = min(invDist, light);
-            result.g = min(invDist, light);
-            result.b = min(invDist, light);
+            result.r = min(invDistSq, light);
+            result.g = min(invDistSq, light);
+            result.b = min(invDistSq, light);
             gl_FragColor = result;
         }
     </script>
@@ -240,7 +242,7 @@
            vec4 sum = vec4(0.0);
 
            float distance = length(vTexCoord0 - 0.5);
-           float blurSize = (15.0 * (distance)) / resolution.x;
+           float blurSize = (20.0 * (distance)) / resolution.x;
 
            // blur in x (horizontal)
            // take nine samples, with the distance blurSize between them
@@ -271,7 +273,7 @@
            vec4 sum = vec4(0.0);
 
            float distance = length(vTexCoord0 - 0.5) / sqrt(2.0);
-           float blurSize = (15.0 * (distance)) / resolution.x;
+           float blurSize = (20.0 * (distance)) / resolution.x;
 
            // blur in y (vertical)
            // take nine samples, with the distance blurSize between them
