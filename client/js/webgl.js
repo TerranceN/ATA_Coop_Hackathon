@@ -369,8 +369,6 @@ var webgl = (function() {
     }
 
     function drawNeHeLogo() {
-        gl.viewport(0, 0, neheTexture.image.width, neheTexture.image.height);
-
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
         if (currentShader) {
             gl.vertexAttribPointer(currentShader.vertexAttribLocation, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -393,25 +391,20 @@ var webgl = (function() {
     }
 
     function drawFBO(fbo) {
-        pPushMatrix();
-            pMatrix = mat4.ortho(0, fbo.width, fbo.height, 0, -1.0, 1.0);
-            gl.viewport(0, 0, fbo.width, fbo.height);
+        gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexPositionBuffer);
+        gl.vertexAttribPointer(currentShader.vertexAttribLocation, fbo.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexPositionBuffer);
-            gl.vertexAttribPointer(currentShader.vertexAttribLocation, fbo.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexTextureCoordBuffer);
+        gl.vertexAttribPointer(currentShader.textureAttribLocation, fbo.vertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, fbo.vertexTextureCoordBuffer);
-            gl.vertexAttribPointer(currentShader.textureAttribLocation, fbo.vertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
+        gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
+        gl.uniform2f(gl.getUniformLocation(currentShader, "resolution"), fbo.width, fbo.height);
 
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, fbo.texture);
-            gl.uniform1i(gl.getUniformLocation(currentShader, "uSampler"), 0);
-            gl.uniform2f(gl.getUniformLocation(currentShader, "resolution"), fbo.width, fbo.height);
-
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fbo.vertexIndexBuffer);
-            setMatrixUniforms();
-            gl.drawElements(gl.TRIANGLES, fbo.vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-        pPopMatrix();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fbo.vertexIndexBuffer);
+        setMatrixUniforms();
+        gl.drawElements(gl.TRIANGLES, fbo.vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     }
 
     var transX = 0;
@@ -427,7 +420,7 @@ var webgl = (function() {
 
         pMatrix = mat4.ortho(0, fbo1.width, fbo1.height, 0, -1, 1);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        setFBO(fbo1);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(allOrNothingProgram);
@@ -444,13 +437,13 @@ var webgl = (function() {
             drawNeHeLogo();
         mvPopMatrix();
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+        setFBO(fbo2);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(distanceProgram);
         drawFBO(fbo1);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        setFBO(fbo1);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(testProgram);
@@ -458,25 +451,25 @@ var webgl = (function() {
 
         reduceFBO(fbo1);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        setFBO(fbo1);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(makeShadowsProgram);
         drawFBO(reductionSteps[0]);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+        setFBO(fbo2);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(gaussianHorizontalProgram);
         drawFBO(fbo1);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1);
+        setFBO(fbo1);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(gaussianVerticalProgram);
         drawFBO(fbo2);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2);
+        setFBO(fbo2);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(defaultProgram);
@@ -489,14 +482,12 @@ var webgl = (function() {
         drawNeHeLogo();
         gl.disable(gl.BLEND);
 
-        pMatrix = mat4.ortho(0, gl.viewportWidth, gl.viewportHeight, 0, -1, 1);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        setFBO(null);
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         setShader(defaultProgram);
         mvPushMatrix();
-            mat4.translate(mvMatrix, [-(fbo1.width - gl.viewportWidth) / 2, (fbo1.height - gl.viewportHeight) / 2, 0]);
+            mat4.translate(mvMatrix, [-(fbo1.width - gl.viewportWidth) / 2, -(fbo1.height - gl.viewportHeight) / 2, 0]);
             drawFBO(fbo2);
         mvPopMatrix();
     }
@@ -529,6 +520,27 @@ var webgl = (function() {
         animate();
     }
 
+    var isFBOSet = false;
+
+    function setFBO(fbo) {
+        if (isFBOSet) {
+            pPopMatrix();
+        }
+
+        if (fbo == null || typeof(fbo) == 'undefined') {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            pMatrix = mat4.ortho(0, gl.viewportWidth, gl.viewportHeight, 0, -1, 1);
+            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+            isFBOSet = false;
+        } else {
+            pPushMatrix();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+            pMatrix = mat4.ortho(0, fbo.width, fbo.height, 0, -1, 1);
+            gl.viewport(0, 0, fbo.width, fbo.height);
+            isFBOSet = true;
+        }
+    }
+
     function setShader(shader) {
         gl.useProgram(shader);
         currentShader = shader;
@@ -550,7 +562,7 @@ var webgl = (function() {
     function reduceFBO(fbo) {
         for (var i = reductionSteps.length - 1; i >= 0; i--) {
             setShader(reductionProgram);
-            gl.bindFramebuffer(gl.FRAMEBUFFER, reductionSteps[i]);
+            setFBO(reductionSteps[i]);
             gl.clearColor(0.0, 0.0, 0.0, 0.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.uniform1f(gl.getUniformLocation(currentShader, "size"), fbo1.width / (2 << (reductionSteps.length - 1 - i)));
